@@ -1,3 +1,5 @@
+// TEMPORALMENTE COMENTADO PARA QUE COMPILE EL CONTROLADOR DE PLAZA
+/*
 using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
@@ -11,6 +13,7 @@ using ParkingApi.DTOs;
 namespace ParkingApi.Business;
 
 public class AuthService : IAuthService
+*/
 {
     private readonly IConfiguration _configuration;
     private readonly IUsuarioRepository _repository;

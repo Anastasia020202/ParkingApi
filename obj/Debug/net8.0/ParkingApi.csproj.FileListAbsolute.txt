@@ -1,0 +1,8 @@
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.csproj.AssemblyReference.cache
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.AssemblyInfoInputs.cache
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.AssemblyInfo.cs
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.csproj.CoreCompileInputs.cache
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\asing\Desktop\AA_EntornoServidor\ParkingApi\obj\Debug\net8.0\ParkingApi.sourcelink.json
