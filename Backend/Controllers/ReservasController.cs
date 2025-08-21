@@ -16,9 +16,25 @@ namespace ParkingApi.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Reserva>> GetReservas()
+        public ActionResult<IEnumerable<Reserva>> GetReservas(
+            [FromQuery] int? usuarioId,
+            [FromQuery] int? plazaId,
+            [FromQuery] DateTime? fechaDesde,
+            [FromQuery] DateTime? fechaHasta,
+            [FromQuery] string? orden,
+            [FromQuery] bool? soloActivas)
         {
-            var reservas = _reservaService.GetAllReservas();
+            var queryParameters = new ReservaQueryParameters
+            {
+                UsuarioId = usuarioId,
+                PlazaId = plazaId,
+                FechaDesde = fechaDesde,
+                FechaHasta = fechaHasta,
+                Orden = orden,
+                SoloActivas = soloActivas
+            };
+
+            var reservas = _reservaService.GetAllReservas(queryParameters);
             return Ok(reservas);
         }
 

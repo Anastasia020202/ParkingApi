@@ -4,7 +4,7 @@ namespace ParkingApi.Services
 {
     public interface IReservaService
     {
-        IEnumerable<Reserva> GetAllReservas();
+        IEnumerable<Reserva> GetAllReservas(ReservaQueryParameters? queryParameters = null);
         Reserva? GetReservaById(int id);
         IEnumerable<Reserva> GetReservasByUsuarioId(int usuarioId);
         Reserva CreateReserva(Reserva reserva);
