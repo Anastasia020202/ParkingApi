@@ -4,7 +4,7 @@ namespace ParkingApi.Services
 {
     public interface IPlazaService
     {
-        IEnumerable<Plaza> GetAllPlazas();
+        IEnumerable<Plaza> GetAllPlazas(PlazaQueryParameters? queryParameters = null);
         Plaza? GetPlazaById(int id);
         Plaza CreatePlaza(Plaza plaza);
         Plaza? UpdatePlaza(int id, Plaza plaza);

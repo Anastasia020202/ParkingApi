@@ -15,12 +15,28 @@ public class PlazasController : ControllerBase
         _plazaService = plazaService;
     }
 
-    [HttpGet]
-    public ActionResult<IEnumerable<Plaza>> GetPlazas()
-    {
-        var plazas = _plazaService.GetAllPlazas();
-        return Ok(plazas);
-    }
+            [HttpGet]
+        public ActionResult<IEnumerable<Plaza>> GetPlazas(
+            [FromQuery] bool? ocupada,
+            [FromQuery] string? tipo,
+            [FromQuery] decimal? precioMin,
+            [FromQuery] decimal? precioMax,
+            [FromQuery] string? orden,
+            [FromQuery] bool? soloDisponibles)
+        {
+            var queryParameters = new PlazaQueryParameters
+            {
+                Ocupada = ocupada,
+                Tipo = tipo,
+                PrecioMin = precioMin,
+                PrecioMax = precioMax,
+                Orden = orden,
+                SoloDisponibles = soloDisponibles
+            };
+
+            var plazas = _plazaService.GetAllPlazas(queryParameters);
+            return Ok(plazas);
+        }
 
     [HttpGet("{id}")]
     public ActionResult<Plaza> GetPlaza(int id)
