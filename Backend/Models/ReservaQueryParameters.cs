@@ -2,11 +2,11 @@ namespace ParkingApi.Models
 {
     public class ReservaQueryParameters
     {
+        public DateTime? Desde { get; set; }
+        public DateTime? Hasta { get; set; }
+        public string? Estado { get; set; }
         public int? UsuarioId { get; set; }
-        public int? PlazaId { get; set; }
-        public DateTime? FechaDesde { get; set; }
-        public DateTime? FechaHasta { get; set; }
-        public string? Orden { get; set; } = "id";
-        public bool? SoloActivas { get; set; }
+        public string? OrderBy { get; set; } = "FechaInicio";
+        public bool Desc { get; set; } = false;
     }
 }

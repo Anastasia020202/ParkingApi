@@ -1,12 +1,26 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ParkingApi.Models
 {
     public class Plaza
     {
         public int Id { get; set; }
-        public string Numero { get; set; } = string.Empty; 
-        public bool Ocupada { get; set; } = false;
-        public string Tipo { get; set; } = "General"; 
+        
+        [Required]
+        public string Numero { get; set; } = "";
+        
+        [Required]
+        public string Tipo { get; set; } = "General";
+        
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El precio debe ser mayor a 0")]
         public decimal PrecioHora { get; set; } = 2.5m;
-        public DateTime? ReservadaHasta { get; set; } 
+        
+        public bool Disponible { get; set; } = true;
+        
+        public DateTime? ReservadaHasta { get; set; }
+        
+        // Navegaciones
+        public List<Reserva>? Reservas { get; set; }
     }
 }
