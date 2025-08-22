@@ -23,7 +23,7 @@ namespace ParkingApi.Controllers
             try
             {
                 var token = await _authService.LoginAsync(loginDto);
-                return Ok(new { token = token, message = "Login exitoso" });
+                return Ok(new { token = token, message = "Login con éxito" });
             }
             catch (Exception ex)
             {

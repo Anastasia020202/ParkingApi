@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Services;
+using System.Security.Claims;
 
 namespace ParkingApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ReservasController : ControllerBase
     {
         private readonly IReservaService _reservaService;
@@ -47,7 +50,19 @@ namespace ParkingApi.Controllers
             return Ok(reserva);
         }
 
+        [HttpGet("mias")]
+        public ActionResult<IEnumerable<Reserva>> GetMisReservas()
+        {
+            var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (usuarioId == 0)
+                return Unauthorized();
+
+            var reservas = _reservaService.GetReservasByUsuarioId(usuarioId);
+            return Ok(reservas);
+        }
+
         [HttpGet("usuario/{usuarioId}")]
+        [Authorize(Roles = "Admin")]
         public ActionResult<IEnumerable<Reserva>> GetReservasByUsuario(int usuarioId)
         {
             var reservas = _reservaService.GetReservasByUsuarioId(usuarioId);

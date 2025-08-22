@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Services;
 
@@ -6,6 +7,7 @@ namespace ParkingApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class TicketsController : ControllerBase
     {
         private readonly ITicketService _ticketService;
