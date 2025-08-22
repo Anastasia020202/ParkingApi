@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ParkingApi.DTOs;
 using ParkingApi.Services;
 
@@ -16,6 +17,7 @@ namespace ParkingApi.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<ActionResult<string>> Login([FromBody] UsuarioLoginDto loginDto)
         {
             try
@@ -30,6 +32,7 @@ namespace ParkingApi.Controllers
         }
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<ActionResult<UsuarioReadDto>> Register([FromBody] UsuarioRegisterDto registerDto)
         {
             try
