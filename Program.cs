@@ -4,17 +4,17 @@ using ParkingApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddScoped<IPlazaRepository, PlazaRepository>();
-builder.Services.AddScoped<IPlazaService, PlazaService>();
-builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
-builder.Services.AddScoped<IReservaService, ReservaService>();
-builder.Services.AddScoped<IVehiculoRepository, VehiculoRepository>();
-builder.Services.AddScoped<IVehiculoService, VehiculoService>();
-builder.Services.AddScoped<ITicketRepository, TicketRepository>();
-builder.Services.AddScoped<ITicketService, TicketService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<IPlazaRepository, PlazaRepository>();
+builder.Services.AddSingleton<IPlazaService, PlazaService>();
+builder.Services.AddSingleton<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddSingleton<IUsuarioService, UsuarioService>();
+builder.Services.AddSingleton<IReservaRepository, ReservaRepository>();
+builder.Services.AddSingleton<IReservaService, ReservaService>();
+builder.Services.AddSingleton<IVehiculoRepository, VehiculoRepository>();
+builder.Services.AddSingleton<IVehiculoService, VehiculoService>();
+builder.Services.AddSingleton<ITicketRepository, TicketRepository>();
+builder.Services.AddSingleton<ITicketService, TicketService>();
+builder.Services.AddSingleton<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
