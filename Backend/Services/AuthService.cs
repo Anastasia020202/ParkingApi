@@ -1,16 +1,22 @@
 using ParkingApi.DTOs;
 using ParkingApi.Models;
 using ParkingApi.Repositories;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace ParkingApi.Services
 {
     public class AuthService : IAuthService
     {
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(IUsuarioRepository usuarioRepository)
+        public AuthService(IUsuarioRepository usuarioRepository, IConfiguration configuration)
         {
             _usuarioRepository = usuarioRepository;
+            _configuration = configuration;
         }
 
         public async Task<string> LoginAsync(UsuarioLoginDto loginDto)
@@ -28,8 +34,8 @@ namespace ParkingApi.Services
             if (!usuario.Activo)
                 throw new Exception("Usuario inactivo");
 
-            // Por ahora retornamos un token simple, después implementaremos JWT
-            return $"token_simple_{usuario.Id}_{usuario.Rol}";
+            // Generar JWT real
+            return GenerateJwtToken(usuario);
         }
 
         public async Task<UsuarioReadDto> RegisterAsync(UsuarioRegisterDto registerDto)
@@ -65,6 +71,29 @@ namespace ParkingApi.Services
                 FechaCreacion = usuarioCreado.FechaCreacion,
                 Activo = usuarioCreado.Activo
             };
+        }
+
+        private string GenerateJwtToken(Usuario usuario)
+        {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Role, usuario.Rol)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpiryInMinutes"])),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
