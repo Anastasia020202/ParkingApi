@@ -1,8 +1,8 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
-using ParkingApi.Services;
 
-namespace ParkingApi.Services
+using ParkingApi.Data.Repositories;
+
+namespace ParkingApi.Business.Services
 {
     public class UsuarioService : IUsuarioService
     {

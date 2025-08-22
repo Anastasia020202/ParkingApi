@@ -1,6 +1,6 @@
 using ParkingApi.Models;
 
-namespace ParkingApi.Services
+namespace ParkingApi.Business.Services
 {
     public interface IUsuarioService
     {

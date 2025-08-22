@@ -1,8 +1,7 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
-using ParkingApi.Services;
+using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Services
+namespace ParkingApi.Business.Services
 {
     public class ReservaService : IReservaService
     {
@@ -23,21 +22,18 @@ namespace ParkingApi.Services
                 if (queryParameters.UsuarioId.HasValue)
                     reservas = reservas.Where(r => r.UsuarioId == queryParameters.UsuarioId.Value);
 
-                if (queryParameters.PlazaId.HasValue)
-                    reservas = reservas.Where(r => r.PlazaId == queryParameters.PlazaId.Value);
+                if (queryParameters.Desde.HasValue)
+                    reservas = reservas.Where(r => r.FechaInicio >= queryParameters.Desde.Value);
 
-                if (queryParameters.FechaDesde.HasValue)
-                    reservas = reservas.Where(r => r.FechaInicio >= queryParameters.FechaDesde.Value);
+                if (queryParameters.Hasta.HasValue)
+                    reservas = reservas.Where(r => r.FechaInicio <= queryParameters.Hasta.Value);
 
-                if (queryParameters.FechaHasta.HasValue)
-                    reservas = reservas.Where(r => r.FechaInicio <= queryParameters.FechaHasta.Value);
-
-                if (queryParameters.SoloActivas == true)
-                    reservas = reservas.Where(r => r.FechaFin == null || r.FechaFin > DateTime.Now);
+                if (!string.IsNullOrEmpty(queryParameters.Estado))
+                    reservas = reservas.Where(r => r.Estado == queryParameters.Estado);
             }
 
             // Aplicar ordenación
-            reservas = queryParameters?.Orden?.ToLower() switch
+            reservas = queryParameters?.OrderBy?.ToLower() switch
             {
                 "fechaInicio" => reservas.OrderBy(r => r.FechaInicio),
                 "fechaInicio_desc" => reservas.OrderByDescending(r => r.FechaInicio),

@@ -50,7 +50,6 @@ namespace ParkingApi.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Numero).IsRequired().HasMaxLength(10);
                 entity.Property(e => e.Tipo).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.PrecioHora).HasColumnType("decimal(18,2)");
                 
                 // Índice único en Numero
                 entity.HasIndex(e => e.Numero).IsUnique();
@@ -89,7 +88,6 @@ namespace ParkingApi.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.FechaInicio).IsRequired();
-                entity.Property(e => e.TotalAPagar).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Estado).IsRequired().HasMaxLength(20);
                 
                 // Relación con Usuario
@@ -117,7 +115,6 @@ namespace ParkingApi.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.NumeroTicket).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.FechaEmision).IsRequired();
-                entity.Property(e => e.Importe).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Estado).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.Observaciones).HasMaxLength(500);
                 

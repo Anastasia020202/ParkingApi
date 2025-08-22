@@ -1,6 +1,7 @@
-using ParkingApi.DTOs;
+using ParkingApi.Models;
+using ParkingApi.Models.DTOs;
 
-namespace ParkingApi.Services
+namespace ParkingApi.Business.Services
 {
     public interface IAuthService
     {

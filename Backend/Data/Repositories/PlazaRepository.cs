@@ -1,7 +1,7 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
+using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Repositories
+namespace ParkingApi.Data.Repositories
 {
     public class PlazaRepository : IPlazaRepository
     {
@@ -33,8 +33,7 @@ namespace ParkingApi.Repositories
             existingPlaza.Numero = plaza.Numero;
             existingPlaza.Tipo = plaza.Tipo;
             existingPlaza.PrecioHora = plaza.PrecioHora;
-            existingPlaza.Ocupada = plaza.Ocupada;
-            existingPlaza.ReservadaHasta = plaza.ReservadaHasta;
+            existingPlaza.Disponible = plaza.Disponible;
 
             return existingPlaza;
         }

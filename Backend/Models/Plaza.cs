@@ -5,22 +5,21 @@ namespace ParkingApi.Models
     public class Plaza
     {
         public int Id { get; set; }
-        
-        [Required]
+
+        [Required, MaxLength(10)]
         public string Numero { get; set; } = "";
-        
-        [Required]
-        public string Tipo { get; set; } = "General";
-        
-        [Required]
-        [Range(0.01, double.MaxValue, ErrorMessage = "El precio debe ser mayor a 0")]
-        public decimal PrecioHora { get; set; } = 2.5m;
-        
+
         public bool Disponible { get; set; } = true;
-        
-        public DateTime? ReservadaHasta { get; set; }
-        
-        // Navegaciones
+
+        [Required]
+        public decimal PrecioHora { get; set; }
+
+        [Required, MaxLength(50)]
+        public string Tipo { get; set; } = "General"; // Coche, Moto, PMR...
+
+        public DateTime FechaAlta { get; set; } = DateTime.UtcNow;
+
+        // Relación con reservas
         public List<Reserva>? Reservas { get; set; }
     }
 }

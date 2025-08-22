@@ -1,12 +1,13 @@
-using ParkingApi.DTOs;
 using ParkingApi.Models;
-using ParkingApi.Repositories;
+using ParkingApi.Models.DTOs;
+using ParkingApi.Data.Repositories;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
-namespace ParkingApi.Services
+namespace ParkingApi.Business.Services
 {
     public class AuthService : IAuthService
     {
@@ -22,17 +23,14 @@ namespace ParkingApi.Services
         public async Task<string> LoginAsync(UsuarioLoginDto loginDto)
         {
             // Buscar usuario por email
-            var usuario = _usuarioRepository.GetByEmail(loginDto.Email);
+            var usuario = _usuarioRepository.GetByEmail(loginDto.Correo);
 
             if (usuario == null)
                 throw new Exception("Usuario no encontrado");
 
             // Verificar password (por ahora simple, después implementaremos hash)
-            if (usuario.Password != loginDto.Password)
+            if (usuario.HashContrasena != loginDto.Password)
                 throw new Exception("Password incorrecto");
-
-            if (!usuario.Activo)
-                throw new Exception("Usuario inactivo");
 
             // Generar JWT real
             return GenerateJwtToken(usuario);
@@ -45,7 +43,7 @@ namespace ParkingApi.Services
                 throw new Exception("Las passwords no coinciden");
 
             // Verificar que el email no exista
-            var usuarioExistente = _usuarioRepository.GetByEmail(registerDto.Email);
+            var usuarioExistente = _usuarioRepository.GetByEmail(registerDto.Correo);
 
             if (usuarioExistente != null)
                 throw new Exception("El email ya está registrado");
@@ -53,11 +51,11 @@ namespace ParkingApi.Services
             // Crear nuevo usuario
             var nuevoUsuario = new Usuario
             {
-                Email = registerDto.Email,
-                Password = registerDto.Password, // Después implementaremos hash
+                Correo = registerDto.Correo,
+                HashContrasena = registerDto.Password, // Después implementaremos hash
+                SaltContrasena = new byte[0], // Por ahora vacío
                 Rol = "User", // Por defecto es User
-                FechaCreacion = DateTime.UtcNow,
-                Activo = true
+                FechaCreacion = DateTime.UtcNow
             };
 
             var usuarioCreado = _usuarioRepository.Add(nuevoUsuario);
@@ -66,10 +64,9 @@ namespace ParkingApi.Services
             return new UsuarioReadDto
             {
                 Id = usuarioCreado.Id,
-                Email = usuarioCreado.Email,
+                Correo = usuarioCreado.Correo,
                 Rol = usuarioCreado.Rol,
-                FechaCreacion = usuarioCreado.FechaCreacion,
-                Activo = usuarioCreado.Activo
+                FechaCreacion = usuarioCreado.FechaCreacion
             };
         }
 
@@ -81,7 +78,7 @@ namespace ParkingApi.Services
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Email, usuario.Correo),
                 new Claim(ClaimTypes.Role, usuario.Rol)
             };
 

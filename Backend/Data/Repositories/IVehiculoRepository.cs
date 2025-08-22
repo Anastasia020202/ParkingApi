@@ -1,6 +1,6 @@
 using ParkingApi.Models;
 
-namespace ParkingApi.Repositories
+namespace ParkingApi.Data.Repositories
 {
     public interface IVehiculoRepository
     {

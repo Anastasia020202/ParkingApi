@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
-using ParkingApi.Services;
+using ParkingApi.Business.Services;
 
-namespace ParkingApi.Controllers;
+namespace ParkingApi.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -19,21 +19,21 @@ public class PlazasController : ControllerBase
         [HttpGet]
         [AllowAnonymous]
         public ActionResult<IEnumerable<Plaza>> GetPlazas(
-            [FromQuery] bool? ocupada,
             [FromQuery] string? tipo,
             [FromQuery] decimal? precioMin,
             [FromQuery] decimal? precioMax,
-            [FromQuery] string? orden,
-            [FromQuery] bool? soloDisponibles)
+            [FromQuery] string? orderBy,
+            [FromQuery] bool soloDisponibles = false,
+            [FromQuery] bool desc = false)
         {
             var queryParameters = new PlazaQueryParameters
             {
-                Ocupada = ocupada,
                 Tipo = tipo,
                 PrecioMin = precioMin,
                 PrecioMax = precioMax,
-                Orden = orden,
-                SoloDisponibles = soloDisponibles
+                OrderBy = orderBy,
+                SoloDisponibles = soloDisponibles,
+                Desc = desc
             };
 
             var plazas = _plazaService.GetAllPlazas(queryParameters);

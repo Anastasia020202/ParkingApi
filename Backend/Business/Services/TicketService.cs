@@ -1,8 +1,7 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
-using ParkingApi.Services;
+using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Services
+namespace ParkingApi.Business.Services
 {
     public class TicketService : ITicketService
     {

@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
-using ParkingApi.Services;
+using ParkingApi.Business.Services;
 using System.Security.Claims;
 
-namespace ParkingApi.Controllers
+namespace ParkingApi.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -21,20 +21,20 @@ namespace ParkingApi.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Reserva>> GetReservas(
             [FromQuery] int? usuarioId,
-            [FromQuery] int? plazaId,
-            [FromQuery] DateTime? fechaDesde,
-            [FromQuery] DateTime? fechaHasta,
-            [FromQuery] string? orden,
-            [FromQuery] bool? soloActivas)
+            [FromQuery] DateTime? desde,
+            [FromQuery] DateTime? hasta,
+            [FromQuery] string? estado,
+            [FromQuery] string? orderBy,
+            [FromQuery] bool desc = false)
         {
             var queryParameters = new ReservaQueryParameters
             {
                 UsuarioId = usuarioId,
-                PlazaId = plazaId,
-                FechaDesde = fechaDesde,
-                FechaHasta = fechaHasta,
-                Orden = orden,
-                SoloActivas = soloActivas
+                Desde = desde,
+                Hasta = hasta,
+                Estado = estado,
+                OrderBy = orderBy,
+                Desc = desc
             };
 
             var reservas = _reservaService.GetAllReservas(queryParameters);

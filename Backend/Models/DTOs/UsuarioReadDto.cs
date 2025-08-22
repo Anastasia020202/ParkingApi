@@ -1,4 +1,4 @@
-namespace ParkingApi.DTOs
+namespace ParkingApi.Models.DTOs
 {
     public class UsuarioReadDto
     {
@@ -6,19 +6,17 @@ namespace ParkingApi.DTOs
         public UsuarioReadDto() { }
 
         // Constructor con parámetros para creación
-        public UsuarioReadDto(int id, string email, string rol, DateTime fechaCreacion, bool activo)
+        public UsuarioReadDto(int id, string correo, string rol, DateTime fechaCreacion)
         {
             Id = id;
-            Email = email;
+            Correo = correo;
             Rol = rol;
             FechaCreacion = fechaCreacion;
-            Activo = activo;
         }
 
         public int Id { get; set; }
-        public string Email { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
         public string Rol { get; set; } = string.Empty;
         public DateTime FechaCreacion { get; set; }
-        public bool Activo { get; set; }
     }
 }

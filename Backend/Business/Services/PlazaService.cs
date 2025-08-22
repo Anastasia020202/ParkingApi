@@ -1,8 +1,8 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
-using ParkingApi.Services;
 
-namespace ParkingApi.Services
+using ParkingApi.Data.Repositories;
+
+namespace ParkingApi.Business.Services
 {
     public class PlazaService : IPlazaService
     {
@@ -20,9 +20,6 @@ namespace ParkingApi.Services
             // Aplicar filtros
             if (queryParameters != null)
             {
-                if (queryParameters.Ocupada.HasValue)
-                    plazas = plazas.Where(p => p.Ocupada == queryParameters.Ocupada.Value);
-
                 if (!string.IsNullOrEmpty(queryParameters.Tipo))
                     plazas = plazas.Where(p => p.Tipo.Contains(queryParameters.Tipo));
 
@@ -33,11 +30,11 @@ namespace ParkingApi.Services
                     plazas = plazas.Where(p => p.PrecioHora <= queryParameters.PrecioMax.Value);
 
                 if (queryParameters.SoloDisponibles == true)
-                    plazas = plazas.Where(p => !p.Ocupada);
+                    plazas = plazas.Where(p => p.Disponible);
             }
 
             // Aplicar ordenación
-            plazas = queryParameters?.Orden?.ToLower() switch
+            plazas = queryParameters?.OrderBy?.ToLower() switch
             {
                 "precio" => plazas.OrderBy(p => p.PrecioHora),
                 "precio_desc" => plazas.OrderByDescending(p => p.PrecioHora),

@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using ParkingApi.DTOs;
-using ParkingApi.Services;
+using ParkingApi.Models;
+using ParkingApi.Models.DTOs;
+using ParkingApi.Business.Services;
 
-namespace ParkingApi.Controllers
+namespace ParkingApi.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

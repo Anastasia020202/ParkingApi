@@ -1,7 +1,7 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
+using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Repositories
+namespace ParkingApi.Data.Repositories
 {
     public class UsuarioRepository : IUsuarioRepository
     {
@@ -14,11 +14,11 @@ namespace ParkingApi.Repositories
             _usuarios.Add(new Usuario
             {
                 Id = 1,
-                Email = "admin@parking.com",
-                Password = "admin123",
+                Correo = "admin@parking.com",
+                HashContrasena = "admin123",
+                SaltContrasena = new byte[0],
                 Rol = "Admin",
-                FechaCreacion = DateTime.UtcNow,
-                Activo = true
+                FechaCreacion = DateTime.UtcNow
             });
         }
 
@@ -34,7 +34,7 @@ namespace ParkingApi.Repositories
 
         public Usuario? GetByEmail(string email)
         {
-            return _usuarios.FirstOrDefault(u => u.Email == email);
+            return _usuarios.FirstOrDefault(u => u.Correo == email);
         }
 
         public Usuario Add(Usuario usuario)
@@ -50,10 +50,10 @@ namespace ParkingApi.Repositories
             if (existingUsuario == null)
                 return null;
 
-            existingUsuario.Email = usuario.Email;
-            existingUsuario.Password = usuario.Password;
+            existingUsuario.Correo = usuario.Correo;
+            existingUsuario.HashContrasena = usuario.HashContrasena;
+            existingUsuario.SaltContrasena = usuario.SaltContrasena;
             existingUsuario.Rol = usuario.Rol;
-            existingUsuario.Activo = usuario.Activo;
 
             return existingUsuario;
         }

@@ -21,7 +21,7 @@ namespace ParkingApi.Models
         [Required]
         public string Rol { get; set; } = "User";
         
-        // Navegaciones
+        // Relaciones
         public List<Reserva>? Reservas { get; set; }
         public List<Vehiculo>? Vehiculos { get; set; }
     }

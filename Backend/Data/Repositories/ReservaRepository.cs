@@ -1,7 +1,7 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
+using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Repositories
+namespace ParkingApi.Data.Repositories
 {
     public class ReservaRepository : IReservaRepository
     {

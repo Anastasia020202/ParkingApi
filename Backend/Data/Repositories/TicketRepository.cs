@@ -1,7 +1,7 @@
 using ParkingApi.Models;
-using ParkingApi.Repositories;
+using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Repositories
+namespace ParkingApi.Data.Repositories
 {
     public class TicketRepository : ITicketRepository
     {
@@ -38,7 +38,7 @@ namespace ParkingApi.Repositories
 
             existingTicket.ReservaId = ticket.ReservaId;
             existingTicket.Importe = ticket.Importe;
-            existingTicket.Pagado = ticket.Pagado;
+            existingTicket.Estado = ticket.Estado;
 
             return existingTicket;
         }
