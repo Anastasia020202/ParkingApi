@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Services;
 
@@ -15,7 +16,8 @@ public class PlazasController : ControllerBase
         _plazaService = plazaService;
     }
 
-            [HttpGet]
+        [HttpGet]
+        [AllowAnonymous]
         public ActionResult<IEnumerable<Plaza>> GetPlazas(
             [FromQuery] bool? ocupada,
             [FromQuery] string? tipo,
@@ -39,6 +41,7 @@ public class PlazasController : ControllerBase
         }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public ActionResult<Plaza> GetPlaza(int id)
     {
         var plaza = _plazaService.GetPlazaById(id);
@@ -48,6 +51,7 @@ public class PlazasController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public ActionResult<Plaza> CreatePlaza(Plaza plaza)
     {
         var createdPlaza = _plazaService.CreatePlaza(plaza);
@@ -55,6 +59,7 @@ public class PlazasController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public ActionResult<Plaza> UpdatePlaza(int id, Plaza plaza)
     {
         var updatedPlaza = _plazaService.UpdatePlaza(id, plaza);
@@ -65,6 +70,7 @@ public class PlazasController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public ActionResult DeletePlaza(int id)
     {
         var deleted = _plazaService.DeletePlaza(id);
