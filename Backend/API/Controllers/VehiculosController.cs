@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Business.Services;
+using System.Security.Claims;
 
 namespace ParkingApi.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
+    [Route("[controller]")]
     public class VehiculosController : ControllerBase
     {
         private readonly IVehiculoService _vehiculoService;
@@ -17,54 +17,107 @@ namespace ParkingApi.API.Controllers
             _vehiculoService = vehiculoService;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Vehiculo>> GetVehiculos()
+        [Authorize]
+        [HttpGet(Name = "GetAllVehiculos")]
+        public ActionResult<IEnumerable<Vehiculo>> GetAllVehiculos()
         {
-            var vehiculos = _vehiculoService.GetAllVehiculos();
-            return Ok(vehiculos);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_vehiculoService.EsAdmin(HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var vehiculos = _vehiculoService.GetAllVehiculos();
+                return Ok(vehiculos);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
-        [HttpGet("{id}")]
-        public ActionResult<Vehiculo> GetVehiculo(int id)
+        [Authorize]
+        [HttpGet("{id}", Name = "GetVehiculo")]
+        public IActionResult GetVehiculo(int id)
         {
-            var vehiculo = _vehiculoService.GetVehiculoById(id);
-            if (vehiculo == null)
-                return NotFound();
-            return Ok(vehiculo);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_vehiculoService.TieneAcceso(id, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var vehiculo = _vehiculoService.GetVehiculoById(id);
+                return Ok(vehiculo);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"El vehículo de id {id} no existe");
+            }
         }
 
-        [HttpGet("usuario/{usuarioId}")]
-        public ActionResult<IEnumerable<Vehiculo>> GetVehiculosByUsuario(int usuarioId)
+        [Authorize]
+        [HttpGet("usuario/{usuarioId}", Name = "GetUsuarioVehiculos")]
+        public IActionResult GetUsuarioVehiculos(int usuarioId)
         {
-            var vehiculos = _vehiculoService.GetVehiculosByUsuarioId(usuarioId);
-            return Ok(vehiculos);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_vehiculoService.TieneAcceso(usuarioId, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var vehiculos = _vehiculoService.GetVehiculosByUsuarioId(usuarioId);
+                return Ok(vehiculos);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
+        [Authorize]
         [HttpPost]
-        public ActionResult<Vehiculo> CreateVehiculo(Vehiculo vehiculo)
+        public IActionResult CreateVehiculo([FromBody] Vehiculo vehiculo)
         {
-            var createdVehiculo = _vehiculoService.CreateVehiculo(vehiculo);
-            return CreatedAtAction(nameof(GetVehiculo), new { id = createdVehiculo.Id }, createdVehiculo);
-        }
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-        [HttpPut("{id}")]
-        public ActionResult<Vehiculo> UpdateVehiculo(int id, Vehiculo vehiculo)
-        {
-            var updatedVehiculo = _vehiculoService.UpdateVehiculo(id, vehiculo);
-            if (updatedVehiculo == null)
-                return NotFound();
-            
-            return Ok(updatedVehiculo);
-        }
+                // Cogiendo id del JWT
+                var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-        [HttpDelete("{id}")]
-        public ActionResult DeleteVehiculo(int id)
-        {
-            var deleted = _vehiculoService.DeleteVehiculo(id);
-            if (!deleted)
-                return NotFound();
-            
-            return NoContent();
+                var vehiculoCreado = _vehiculoService.CreateVehiculo(usuarioId, vehiculo);
+
+                return Ok(vehiculoCreado.Id);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

@@ -27,6 +27,12 @@ namespace ParkingApi.Business.Services
             return _repository.GetByReservaId(reservaId);
         }
 
+        public IEnumerable<Ticket> GetTicketsByUsuarioId(int usuarioId)
+        {
+            var allTickets = _repository.GetAll();
+            return allTickets.Where(t => t.Reserva?.UsuarioId == usuarioId);
+        }
+
         public Ticket CreateTicket(Ticket ticket)
         {
             return _repository.Add(ticket);

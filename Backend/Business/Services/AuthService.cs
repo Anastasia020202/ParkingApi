@@ -11,86 +11,124 @@ namespace ParkingApi.Business.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly IUsuarioRepository _usuarioRepository;
         private readonly IConfiguration _configuration;
+        private readonly IUsuarioRepository _repository;
 
-        public AuthService(IUsuarioRepository usuarioRepository, IConfiguration configuration)
+        public AuthService(IConfiguration configuration,
+                           IUsuarioRepository repository)
         {
-            _usuarioRepository = usuarioRepository;
             _configuration = configuration;
+            _repository = repository;
         }
 
-        public async Task<string> LoginAsync(UsuarioLoginDto loginDto)
+        public string Login(UsuarioLoginDto usuarioLoginDto)
         {
-            // Buscar usuario por email
-            var usuario = _usuarioRepository.GetByEmail(loginDto.Correo);
+            var usuario = _repository.GetByEmail(usuarioLoginDto.Correo);
 
             if (usuario == null)
-                throw new Exception("Usuario no encontrado");
-
-            // Verificar password (por ahora simple, después implementaremos hash)
-            if (usuario.HashContrasena != loginDto.Password)
-                throw new Exception("Password incorrecto");
-
-            // Generar JWT real
-            return GenerateJwtToken(usuario);
-        }
-
-        public async Task<UsuarioReadDto> RegisterAsync(UsuarioRegisterDto registerDto)
-        {
-            // Validar que las passwords coincidan
-            if (registerDto.Password != registerDto.ConfirmPassword)
-                throw new Exception("Las passwords no coinciden");
-
-            // Verificar que el email no exista
-            var usuarioExistente = _usuarioRepository.GetByEmail(registerDto.Correo);
-
-            if (usuarioExistente != null)
-                throw new Exception("El email ya está registrado");
-
-            // Crear nuevo usuario
-            var nuevoUsuario = new Usuario
             {
-                Correo = registerDto.Correo,
-                HashContrasena = registerDto.Password, // Después implementaremos hash
-                SaltContrasena = new byte[0], // Por ahora vacío
-                Rol = "User", // Por defecto es User
-                FechaCreacion = DateTime.UtcNow
+                throw new UnauthorizedAccessException("Correo o contraseña incorrectos");
+            }
+
+            if (usuario.HashContrasena != usuarioLoginDto.Password)
+            {
+                throw new UnauthorizedAccessException("Correo o contraseña incorrectos");
+            }
+
+            var userRead = new UsuarioReadDto()
+            {
+                Id = usuario.Id,
+                Correo = usuario.Correo,
+                Rol = usuario.Rol,
+                FechaCreacion = usuario.FechaCreacion
             };
 
-            var usuarioCreado = _usuarioRepository.Add(nuevoUsuario);
+            return GenerateToken(userRead);
+        }
 
-            // Retornar DTO sin password
-            return new UsuarioReadDto
+        public string Register(UsuarioRegisterDto usuarioRegisterDto)
+        {
+            if (usuarioRegisterDto.Password != usuarioRegisterDto.ConfirmPassword)
+            {
+                throw new InvalidOperationException("Las contraseñas no coinciden");
+            }
+
+            var usuarioExistente = _repository.GetByEmail(usuarioRegisterDto.Correo);
+
+            if (usuarioExistente != null)
+            {
+                throw new InvalidOperationException("Ya existe un usuario con ese correo.");
+            }
+
+            var nuevoUsuario = new Usuario
+            {
+                Correo = usuarioRegisterDto.Correo,
+                HashContrasena = usuarioRegisterDto.Password,
+                SaltContrasena = new byte[0],
+                Rol = "User",
+                FechaCreacion = DateTime.Now
+            };
+
+            var usuarioCreado = _repository.Add(nuevoUsuario);
+
+            var userRead = new UsuarioReadDto()
             {
                 Id = usuarioCreado.Id,
                 Correo = usuarioCreado.Correo,
                 Rol = usuarioCreado.Rol,
                 FechaCreacion = usuarioCreado.FechaCreacion
             };
+
+            return GenerateToken(userRead);
         }
 
-        private string GenerateJwtToken(Usuario usuario)
+        public string GenerateToken(UsuarioReadDto usuarioReadDto)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            var key = Encoding.UTF8.GetBytes(_configuration["JWT:SecretKey"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Email, usuario.Correo),
-                new Claim(ClaimTypes.Role, usuario.Rol)
+                Issuer = _configuration["JWT:ValidIssuer"],
+                Audience = _configuration["JWT:ValidAudience"],
+                Subject = new ClaimsIdentity(new Claim[]
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, Convert.ToString(usuarioReadDto.Id)),
+                            new Claim(ClaimTypes.Email, usuarioReadDto.Correo),
+                            new Claim(ClaimTypes.Role, usuarioReadDto.Rol),
+                        }),
+
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
+                                                            SecurityAlgorithms.HmacSha256Signature)
             };
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpiryInMinutes"])),
-                signingCredentials: credentials
-            );
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+            return tokenString;
+        }
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+        public bool VerificarAcceso(int id, ClaimsPrincipal user)
+        {
+            var userIdClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+
+            if (userIdClaim is null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return false;
+            }
+
+            var isOwnResource = (userId == id);
+
+            var rolClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+            if (rolClaim != null)
+            {
+                var isAdmin = rolClaim.Value == "Admin";
+
+                if (isOwnResource || isAdmin)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
         }
     }
 }

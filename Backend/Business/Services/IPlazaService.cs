@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ParkingApi.Models;
 
 namespace ParkingApi.Business.Services
@@ -9,5 +10,8 @@ namespace ParkingApi.Business.Services
         Plaza CreatePlaza(Plaza plaza);
         Plaza? UpdatePlaza(int id, Plaza plaza);
         bool DeletePlaza(int id);
+        
+        // Autorizar
+        bool EsAdmin(ClaimsPrincipal user);
     }
 }

@@ -7,8 +7,7 @@ using System.Security.Claims;
 namespace ParkingApi.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
+    [Route("[controller]")]
     public class ReservasController : ControllerBase
     {
         private readonly IReservaService _reservaService;
@@ -18,82 +17,108 @@ namespace ParkingApi.API.Controllers
             _reservaService = reservaService;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Reserva>> GetReservas(
-            [FromQuery] int? usuarioId,
-            [FromQuery] DateTime? desde,
-            [FromQuery] DateTime? hasta,
-            [FromQuery] string? estado,
-            [FromQuery] string? orderBy,
-            [FromQuery] bool desc = false)
+        [Authorize]
+        [HttpGet(Name = "GetAllReservas")]
+        public ActionResult<IEnumerable<Reserva>> GetAllReservas()
         {
-            var queryParameters = new ReservaQueryParameters
+            try
             {
-                UsuarioId = usuarioId,
-                Desde = desde,
-                Hasta = hasta,
-                Estado = estado,
-                OrderBy = orderBy,
-                Desc = desc
-            };
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-            var reservas = _reservaService.GetAllReservas(queryParameters);
-            return Ok(reservas);
+                if (!_reservaService.EsAdmin(HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var reservas = _reservaService.GetAllReservas();
+                return Ok(reservas);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
-        [HttpGet("{id}")]
-        public ActionResult<Reserva> GetReserva(int id)
+        [Authorize]
+        [HttpGet("{id}", Name = "GetReserva")]
+        public IActionResult GetReserva(int id)
         {
-            var reserva = _reservaService.GetReservaById(id);
-            if (reserva == null)
-                return NotFound();
-            return Ok(reserva);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_reservaService.TieneAcceso(id, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var reserva = _reservaService.GetReservaById(id);
+                return Ok(reserva);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"La reserva de id {id} no existe");
+            }
         }
 
-        [HttpGet("mias")]
-        public ActionResult<IEnumerable<Reserva>> GetMisReservas()
+        [Authorize]
+        [HttpGet("usuario/{usuarioId}", Name = "GetUsuarioReservas")]
+        public IActionResult GetUsuarioReservas(int usuarioId)
         {
-            var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            if (usuarioId == 0)
-                return Unauthorized();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-            var reservas = _reservaService.GetReservasByUsuarioId(usuarioId);
-            return Ok(reservas);
+                if (!_reservaService.TieneAcceso(usuarioId, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var reservas = _reservaService.GetReservasByUsuarioId(usuarioId);
+                return Ok(reservas);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        [HttpGet("usuario/{usuarioId}")]
-        [Authorize(Roles = "Admin")]
-        public ActionResult<IEnumerable<Reserva>> GetReservasByUsuario(int usuarioId)
+        [Authorize]
+        [HttpPost(Name = "HacerReserva")]
+        public IActionResult HacerReserva(Reserva reserva)
         {
-            var reservas = _reservaService.GetReservasByUsuarioId(usuarioId);
-            return Ok(reservas);
-        }
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-        [HttpPost]
-        public ActionResult<Reserva> CreateReserva(Reserva reserva)
-        {
-            var createdReserva = _reservaService.CreateReserva(reserva);
-            return CreatedAtAction(nameof(GetReserva), new { id = createdReserva.Id }, createdReserva);
-        }
+                // Cogiendo id del JWT
+                var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-        [HttpPut("{id}")]
-        public ActionResult<Reserva> UpdateReserva(int id, Reserva reserva)
-        {
-            var updatedReserva = _reservaService.UpdateReserva(id, reserva);
-            if (updatedReserva == null)
-                return NotFound();
-            
-            return Ok(updatedReserva);
-        }
+                var reservaCreada = _reservaService.CreateReserva(usuarioId, reserva);
 
-        [HttpDelete("{id}")]
-        public ActionResult DeleteReserva(int id)
-        {
-            var deleted = _reservaService.DeleteReserva(id);
-            if (!deleted)
-                return NotFound();
-            
-            return NoContent();
+                // Al solo devolver al id, no se serializa
+                return Ok(reservaCreada.Id);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

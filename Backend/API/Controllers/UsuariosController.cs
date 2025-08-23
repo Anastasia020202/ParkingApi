@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Business.Services;
+using ParkingApi.Models.DTOs;
 
 namespace ParkingApi.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Route("[controller]")]
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
@@ -17,47 +17,113 @@ namespace ParkingApi.API.Controllers
             _usuarioService = usuarioService;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Usuario>> GetUsuarios()
+        [Authorize]
+        [HttpGet(Name = "GetAllUsuarios")]
+        public ActionResult<IEnumerable<UsuarioReadDto>> GetAllUsuarios([FromQuery] UsuarioQueryParameters query)
         {
-            var usuarios = _usuarioService.GetAllUsuarios();
-            return Ok(usuarios);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_usuarioService.EsAdmin(HttpContext.User))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var usuarios = _usuarioService.GetAllUsuarios(query);
+                return Ok(usuarios);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
-        [HttpGet("{id}")]
-        public ActionResult<Usuario> GetUsuario(int id)
+        [Authorize]
+        [HttpGet("{id}", Name = "GetUsuario")]
+        public IActionResult GetUsuario(int id)
         {
-            var usuario = _usuarioService.GetUsuarioById(id);
-            if (usuario == null)
-                return NotFound();
-            return Ok(usuario);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_usuarioService.TieneAcceso(id, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+                var usuario = _usuarioService.GetUsuarioById(id);
+                return Ok(usuario);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"El usuario de id {id} no existe");
+            }
         }
 
-        [HttpPost]
-        public ActionResult<Usuario> CreateUsuario(Usuario usuario)
+        // Ver reservas de usuario
+        [Authorize]
+        [HttpGet("{id}/reservas", Name = "GetUsuarioReservas")]
+        public IActionResult GetUsuarioReservas(int id)
         {
-            var createdUsuario = _usuarioService.CreateUsuario(usuario);
-            return CreatedAtAction(nameof(GetUsuario), new { id = createdUsuario.Id }, createdUsuario);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_usuarioService.TieneAcceso(id, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var reservas = _usuarioService.GetReservasByUser(id);
+                return Ok(reservas);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        [HttpPut("{id}")]
-        public ActionResult<Usuario> UpdateUsuario(int id, Usuario usuario)
+        // Ver reserva singular de usuario (usuario/id/reservas/id)
+        [Authorize]
+        [HttpGet("{usuarioId}/reservas/{reservaId}", Name = "GetUsuarioReserva")]
+        public IActionResult GetUsuarioReservaSingular(int usuarioId, int reservaId)
         {
-            var updatedUsuario = _usuarioService.UpdateUsuario(id, usuario);
-            if (updatedUsuario == null)
-                return NotFound();
-            
-            return Ok(updatedUsuario);
-        }
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-        [HttpDelete("{id}")]
-        public ActionResult DeleteUsuario(int id)
-        {
-            var deleted = _usuarioService.DeleteUsuario(id);
-            if (!deleted)
-                return NotFound();
-            
-            return NoContent();
+                if (!_usuarioService.TieneAcceso(usuarioId, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var reserva = _usuarioService.GetReservaByUserAndId(usuarioId, reservaId);
+                return Ok(reserva);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"No se han encontrado la reserva {reservaId} del usuario {usuarioId}");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

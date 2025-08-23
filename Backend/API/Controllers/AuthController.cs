@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Models.DTOs;
 using ParkingApi.Business.Services;
@@ -7,7 +6,7 @@ using ParkingApi.Business.Services;
 namespace ParkingApi.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -17,33 +16,51 @@ namespace ParkingApi.API.Controllers
             _authService = authService;
         }
 
-        [HttpPost("login")]
-        [AllowAnonymous]
-        public async Task<ActionResult<string>> Login([FromBody] UsuarioLoginDto loginDto)
+        [HttpPost("Login")]
+        public IActionResult Login(UsuarioLoginDto usuarioLoginDto)
         {
             try
             {
-                var token = await _authService.LoginAsync(loginDto);
-                return Ok(new { token = token, message = "Login con éxito" });
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                var token = _authService.LoginAsync(usuarioLoginDto).Result;
+                return Ok(token);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest("Error generando el token: " + ex.Message);
             }
         }
 
-        [HttpPost("register")]
-        [AllowAnonymous]
-        public async Task<ActionResult<UsuarioReadDto>> Register([FromBody] UsuarioRegisterDto registerDto)
+        [HttpPost("Register")]
+        public IActionResult Register(UsuarioRegisterDto usuarioRegisterDto)
         {
             try
             {
-                var usuario = await _authService.RegisterAsync(registerDto);
-                return CreatedAtAction(nameof(Register), usuario);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                var usuario = _authService.RegisterAsync(usuarioRegisterDto).Result;
+                return Ok(usuario);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
     }

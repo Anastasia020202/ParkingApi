@@ -6,7 +6,7 @@ using ParkingApi.Business.Services;
 namespace ParkingApi.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public class PlazasController : ControllerBase
 {
     private readonly IPlazaService _plazaService;
@@ -16,67 +16,114 @@ public class PlazasController : ControllerBase
         _plazaService = plazaService;
     }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public ActionResult<IEnumerable<Plaza>> GetPlazas(
-            [FromQuery] string? tipo,
-            [FromQuery] decimal? precioMin,
-            [FromQuery] decimal? precioMax,
-            [FromQuery] string? orderBy,
-            [FromQuery] bool soloDisponibles = false,
-            [FromQuery] bool desc = false)
+    [HttpGet(Name = "GetAllPlazas")]
+    public ActionResult<IEnumerable<Plaza>> GetPlazas([FromQuery] PlazaQueryParameters query)
+    {
+        if (!ModelState.IsValid)
         {
-            var queryParameters = new PlazaQueryParameters
-            {
-                Tipo = tipo,
-                PrecioMin = precioMin,
-                PrecioMax = precioMax,
-                OrderBy = orderBy,
-                SoloDisponibles = soloDisponibles,
-                Desc = desc
-            };
-
-            var plazas = _plazaService.GetAllPlazas(queryParameters);
-            return Ok(plazas);
+            return BadRequest(ModelState);
         }
 
-    [HttpGet("{id}")]
-    [AllowAnonymous]
-    public ActionResult<Plaza> GetPlaza(int id)
-    {
-        var plaza = _plazaService.GetPlazaById(id);
-        if (plaza == null)
-            return NotFound();
-        return Ok(plaza);
+        try
+        {
+            var plazas = _plazaService.GetAllPlazas(query);
+            return Ok(plazas);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex);
+        }
     }
 
+    [HttpGet("{id}", Name = "GetPlaza")]
+    public IActionResult GetPlaza(int id)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var plaza = _plazaService.GetPlazaById(id);
+            return Ok(plaza);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound($"La plaza de id {id} no existe");
+        }
+    }
+
+    // POST
+    [Authorize]
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public ActionResult<Plaza> CreatePlaza(Plaza plaza)
+    public IActionResult CreatePlaza([FromBody] Plaza plaza)
     {
-        var createdPlaza = _plazaService.CreatePlaza(plaza);
-        return CreatedAtAction(nameof(GetPlaza), new { id = createdPlaza.Id }, createdPlaza);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (!_plazaService.EsAdmin(HttpContext.User))
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            var plazaCreada = _plazaService.CreatePlaza(plaza);
+            return Ok(plazaCreada.Id);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
+    // PUT
+    [Authorize]
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    public ActionResult<Plaza> UpdatePlaza(int id, Plaza plaza)
+    public IActionResult UpdatePlaza(int id, [FromBody] Plaza plaza)
     {
-        var updatedPlaza = _plazaService.UpdatePlaza(id, plaza);
-        if (updatedPlaza == null)
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (!_plazaService.EsAdmin(HttpContext.User))
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            _plazaService.UpdatePlaza(id, plaza);
+            return Ok(id);
+        }
+        catch (KeyNotFoundException)
+        {
             return NotFound();
-        
-        return Ok(updatedPlaza);
+        }
     }
 
+    // DELETE
+    [Authorize]
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
-    public ActionResult DeletePlaza(int id)
+    public IActionResult DeletePlaza(int id)
     {
-        var deleted = _plazaService.DeletePlaza(id);
-        if (!deleted)
-            return NotFound();
-        
-        return NoContent();
+        if (!_plazaService.EsAdmin(HttpContext.User))
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            _plazaService.DeletePlaza(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 }

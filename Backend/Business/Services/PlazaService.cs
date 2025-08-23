@@ -1,5 +1,5 @@
+using System.Security.Claims;
 using ParkingApi.Models;
-
 using ParkingApi.Data.Repositories;
 
 namespace ParkingApi.Business.Services
@@ -13,59 +13,83 @@ namespace ParkingApi.Business.Services
             _repository = repository;
         }
 
+        // Create
+        public Plaza CreatePlaza(Plaza plaza)
+        {
+            var nuevaPlaza = new Plaza
+            {
+                Numero = plaza.Numero,
+                Tipo = plaza.Tipo,
+                PrecioHora = plaza.PrecioHora,
+                Disponible = plaza.Disponible
+            };
+            _repository.Add(nuevaPlaza);
+            _repository.SaveChanges();
+            return nuevaPlaza;
+        }
+
+        // Read
         public IEnumerable<Plaza> GetAllPlazas(PlazaQueryParameters? queryParameters = null)
         {
-            var plazas = _repository.GetAll().AsQueryable();
-
-            // Aplicar filtros
-            if (queryParameters != null)
-            {
-                if (!string.IsNullOrEmpty(queryParameters.Tipo))
-                    plazas = plazas.Where(p => p.Tipo.Contains(queryParameters.Tipo));
-
-                if (queryParameters.PrecioMin.HasValue)
-                    plazas = plazas.Where(p => p.PrecioHora >= queryParameters.PrecioMin.Value);
-
-                if (queryParameters.PrecioMax.HasValue)
-                    plazas = plazas.Where(p => p.PrecioHora <= queryParameters.PrecioMax.Value);
-
-                if (queryParameters.SoloDisponibles == true)
-                    plazas = plazas.Where(p => p.Disponible);
-            }
-
-            // Aplicar ordenación
-            plazas = queryParameters?.OrderBy?.ToLower() switch
-            {
-                "precio" => plazas.OrderBy(p => p.PrecioHora),
-                "precio_desc" => plazas.OrderByDescending(p => p.PrecioHora),
-                "tipo" => plazas.OrderBy(p => p.Tipo),
-                "tipo_desc" => plazas.OrderByDescending(p => p.Tipo),
-                "numero" => plazas.OrderBy(p => p.Numero),
-                "numero_desc" => plazas.OrderByDescending(p => p.Numero),
-                _ => plazas.OrderBy(p => p.Id)
-            };
-
-            return plazas.ToList();
+            return _repository.GetAll(queryParameters);
         }
 
         public Plaza? GetPlazaById(int id)
         {
-            return _repository.GetById(id);
+            var plaza = _repository.GetById(id);
+            if (plaza == null)
+            {
+                throw new KeyNotFoundException($"No hay plazas con el id {id}");
+            }
+            return plaza;
         }
 
-        public Plaza CreatePlaza(Plaza plaza)
-        {
-            return _repository.Add(plaza);
-        }
-
+        // Update
         public Plaza? UpdatePlaza(int id, Plaza plaza)
         {
-            return _repository.Update(id, plaza);
+            var plazaExistente = _repository.GetById(id);
+
+            if (plazaExistente == null)
+            {
+                throw new KeyNotFoundException($"No hay plazas con el id {id}");
+            }
+
+            plazaExistente.Numero = plaza.Numero;
+            plazaExistente.Tipo = plaza.Tipo;
+            plazaExistente.PrecioHora = plaza.PrecioHora;
+            plazaExistente.Disponible = plaza.Disponible;
+
+            _repository.SaveChanges();
+            return plazaExistente;
         }
 
+        // Delete
         public bool DeletePlaza(int id)
         {
-            return _repository.Delete(id);
+            var plaza = _repository.GetById(id);
+            if (plaza == null)
+            {
+                throw new KeyNotFoundException($"No hay plazas con el id {id}");
+            }
+
+            _repository.Delete(id);
+            _repository.SaveChanges();
+            return true;
+        }
+
+        // Autorizar
+        public bool EsAdmin(ClaimsPrincipal user)
+        {
+            var rol = user.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role);
+
+            if (rol == null)
+            {
+                return false;
+            }
+
+            var claimValue = rol.Value;
+
+            return claimValue == "Admin";
         }
     }
 }

@@ -2,71 +2,132 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
 using ParkingApi.Business.Services;
+using System.Net.Mime;
 
 namespace ParkingApi.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Route("[controller]")]
     public class TicketsController : ControllerBase
     {
         private readonly ITicketService _ticketService;
+        private readonly ITicketPdfService _pdfService;
 
-        public TicketsController(ITicketService ticketService)
+        public TicketsController(ITicketService ticketService, ITicketPdfService pdfService)
         {
             _ticketService = ticketService;
+            _pdfService = pdfService;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Ticket>> GetTickets()
+        [Authorize]
+        [HttpGet(Name = "GetAllTickets")]
+        public ActionResult<IEnumerable<Ticket>> GetAllTickets()
         {
-            var tickets = _ticketService.GetAllTickets();
-            return Ok(tickets);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_ticketService.EsAdmin(HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var tickets = _ticketService.GetAllTickets();
+                return Ok(tickets);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
-        [HttpGet("{id}")]
-        public ActionResult<Ticket> GetTicket(int id)
+        [Authorize]
+        [HttpGet("{id}", Name = "GetTicket")]
+        public IActionResult GetTicket(int id)
         {
-            var ticket = _ticketService.GetTicketById(id);
-            if (ticket == null)
-                return NotFound();
-            return Ok(ticket);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_ticketService.TieneAcceso(id, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var ticket = _ticketService.GetTicketById(id);
+                return Ok(ticket);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"El ticket de id {id} no existe");
+            }
         }
 
-        [HttpGet("reserva/{reservaId}")]
-        public ActionResult<Ticket> GetTicketByReserva(int reservaId)
+        [Authorize]
+        [HttpGet("usuario/{usuarioId}", Name = "GetUsuarioTickets")]
+        public IActionResult GetUsuarioTickets(int usuarioId)
         {
-            var ticket = _ticketService.GetTicketByReservaId(reservaId);
-            if (ticket == null)
-                return NotFound();
-            return Ok(ticket);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (!_ticketService.TieneAcceso(usuarioId, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
+
+                var tickets = _ticketService.GetTicketsByUsuarioId(usuarioId);
+                return Ok(tickets);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        [HttpPost]
-        public ActionResult<Ticket> CreateTicket(Ticket ticket)
+        [Authorize]
+        [HttpGet("{id}/pdf")]
+        public IActionResult DownloadTicketPdf(int id)
         {
-            var createdTicket = _ticketService.CreateTicket(ticket);
-            return CreatedAtAction(nameof(GetTicket), new { id = createdTicket.Id }, createdTicket);
-        }
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-        [HttpPut("{id}")]
-        public ActionResult<Ticket> UpdateTicket(int id, Ticket ticket)
-        {
-            var updatedTicket = _ticketService.UpdateTicket(id, ticket);
-            if (updatedTicket == null)
-                return NotFound();
-            
-            return Ok(updatedTicket);
-        }
+                if (!_ticketService.TieneAcceso(id, HttpContext.User))
+                {
+                    return Unauthorized();
+                }
 
-        [HttpDelete("{id}")]
-        public ActionResult DeleteTicket(int id)
-        {
-            var deleted = _ticketService.DeleteTicket(id);
-            if (!deleted)
-                return NotFound();
-            
-            return NoContent();
+                var ticket = _ticketService.GetTicketById(id);
+                byte[] pdfBytes = _pdfService.GenerateTicketPdf(ticket);
+                string fileName = $"ticket_{ticket.NumeroTicket}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                
+                return File(pdfBytes, MediaTypeNames.Application.Pdf, fileName);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"El ticket de id {id} no existe");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error generando PDF: {ex.Message}");
+            }
         }
     }
 }
