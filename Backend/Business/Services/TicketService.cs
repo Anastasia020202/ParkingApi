@@ -1,51 +1,72 @@
-using ParkingApi.Models;
 using ParkingApi.Data.Repositories;
+using ParkingApi.Models;
+using System.Security.Claims;
 
-namespace ParkingApi.Business.Services
+namespace ParkingApi.Business.Services;
+
+public class TicketService : ITicketService
 {
-    public class TicketService : ITicketService
+    private readonly IReservaRepository _reservaRepository;
+
+    public TicketService(IReservaRepository reservaRepository)
     {
-        private readonly ITicketRepository _repository;
+        _reservaRepository = reservaRepository;
+    }
 
-        public TicketService(ITicketRepository repository)
+    public byte[] GenerateTicketPdf(int reservaId)
+    {
+        var reserva = _reservaRepository.GetReservaById(reservaId);
+        if (reserva == null)
         {
-            _repository = repository;
+            throw new KeyNotFoundException("Reserva no encontrada");
         }
 
-        public IEnumerable<Ticket> GetAllTickets()
+        // Por ahora retornamos un array de bytes vacío
+        // Aquí deberías integrar con ITicketPdfService para generar el PDF real
+        // return await _ticketPdfService.GeneratePdf(reserva);
+        
+        // Placeholder: retornar un PDF simple
+        var pdfContent = $"Ticket para Reserva {reserva.NumeroTicket}\n" +
+                        $"Usuario: {reserva.UsuarioId}\n" +
+                        $"Plaza: {reserva.PlazaId}\n" +
+                        $"Importe: {reserva.Importe:C}\n" +
+                        $"Estado: {reserva.Estado}\n" +
+                        $"Fecha: {reserva.FechaEmision:dd/MM/yyyy HH:mm}";
+        
+        return System.Text.Encoding.UTF8.GetBytes(pdfContent);
+    }
+
+    public bool EsAdmin(ClaimsPrincipal user)
+    {
+        var rol = user.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role);
+
+        if (rol == null)
         {
-            return _repository.GetAll();
+            return false;
         }
 
-        public Ticket? GetTicketById(int id)
+        var claimValue = rol.Value;
+
+        return claimValue == "Admin";
+    }
+
+    public bool TieneAcceso(int reservaId, ClaimsPrincipal user)
+    {
+        var claimId = user.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier);
+
+        if (claimId == null || !int.TryParse(claimId.Value, out int resultado))
         {
-            return _repository.GetById(id);
+            throw new UnauthorizedAccessException();
         }
 
-        public Ticket? GetTicketByReservaId(int reservaId)
+        var reserva = _reservaRepository.GetReservaById(reservaId);
+        if (reserva == null)
         {
-            return _repository.GetByReservaId(reservaId);
+            return false;
         }
 
-        public IEnumerable<Ticket> GetTicketsByUsuarioId(int usuarioId)
-        {
-            var allTickets = _repository.GetAll();
-            return allTickets.Where(t => t.Reserva?.UsuarioId == usuarioId);
-        }
+        var esElUsuario = resultado == reserva.UsuarioId;
 
-        public Ticket CreateTicket(Ticket ticket)
-        {
-            return _repository.Add(ticket);
-        }
-
-        public Ticket? UpdateTicket(int id, Ticket ticket)
-        {
-            return _repository.Update(id, ticket);
-        }
-
-        public bool DeleteTicket(int id)
-        {
-            return _repository.Delete(id);
-        }
+        return EsAdmin(user) || esElUsuario;
     }
 }

@@ -12,7 +12,7 @@ namespace ParkingApi.Business.Services
 {
     public class TicketPdfService : ITicketPdfService
     {
-        public byte[] GenerateTicketPdf(Ticket ticket)
+        public byte[] GenerateTicketPdf(Reserva reserva)
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -33,47 +33,44 @@ namespace ParkingApi.Business.Services
                 document.Add(title);
 
                 // Información del ticket
-                AddInfoRow(document, "Número de Ticket:", ticket.NumeroTicket, font, boldFont);
-                AddInfoRow(document, "Fecha de Emisión:", ticket.FechaEmision.ToString("dd/MM/yyyy HH:mm"), font, boldFont);
-                AddInfoRow(document, "Estado:", ticket.Estado, font, boldFont);
+                AddInfoRow(document, "Número de Ticket:", reserva.NumeroTicket, font, boldFont);
+                AddInfoRow(document, "Fecha de Emisión:", reserva.FechaEmision.ToString("dd/MM/yyyy HH:mm"), font, boldFont);
+                AddInfoRow(document, "Estado:", reserva.Estado, font, boldFont);
 
                 // Separador
                 document.Add(new Paragraph("").SetMarginBottom(20));
 
                 // Información de la reserva
-                if (ticket.Reserva != null)
+                AddInfoRow(document, "Plaza:", reserva.Plaza?.Numero ?? "N/A", font, boldFont);
+                AddInfoRow(document, "Tipo de Plaza:", reserva.Plaza?.Tipo ?? "N/A", font, boldFont);
+                AddInfoRow(document, "Fecha de Inicio:", reserva.FechaInicio.ToString("dd/MM/yyyy HH:mm"), font, boldFont);
+                
+                if (reserva.FechaFin.HasValue)
                 {
-                    AddInfoRow(document, "Plaza:", ticket.Reserva.Plaza?.Numero ?? "N/A", font, boldFont);
-                    AddInfoRow(document, "Tipo de Plaza:", ticket.Reserva.Plaza?.Tipo ?? "N/A", font, boldFont);
-                    AddInfoRow(document, "Fecha de Inicio:", ticket.Reserva.FechaInicio.ToString("dd/MM/yyyy HH:mm"), font, boldFont);
-                    
-                    if (ticket.Reserva.FechaFin.HasValue)
-                    {
-                        AddInfoRow(document, "Fecha de Fin:", ticket.Reserva.FechaFin.Value.ToString("dd/MM/yyyy HH:mm"), font, boldFont);
-                    }
+                    AddInfoRow(document, "Fecha de Fin:", reserva.FechaFin.Value.ToString("dd/MM/yyyy HH:mm"), font, boldFont);
+                }
 
-                    AddInfoRow(document, "Usuario:", ticket.Reserva.Usuario?.Correo ?? "N/A", font, boldFont);
-                    
-                    if (ticket.Reserva.Vehiculo != null)
-                    {
-                        AddInfoRow(document, "Vehículo:", ticket.Reserva.Vehiculo.Matricula, font, boldFont);
-                        AddInfoRow(document, "Marca:", ticket.Reserva.Vehiculo.Marca, font, boldFont);
-                        AddInfoRow(document, "Modelo:", ticket.Reserva.Vehiculo.Modelo, font, boldFont);
-                    }
+                AddInfoRow(document, "Usuario:", reserva.Usuario?.Correo ?? "N/A", font, boldFont);
+                
+                if (reserva.Vehiculo != null)
+                {
+                    AddInfoRow(document, "Vehículo:", reserva.Vehiculo.Matricula, font, boldFont);
+                    AddInfoRow(document, "Marca:", reserva.Vehiculo.Marca, font, boldFont);
+                    AddInfoRow(document, "Modelo:", reserva.Vehiculo.Modelo, font, boldFont);
                 }
 
                 // Separador
                 document.Add(new Paragraph("").SetMarginBottom(20));
 
                 // Información de precios
-                AddInfoRow(document, "Precio por Hora:", $"€{ticket.Reserva?.Plaza?.PrecioHora:F2}", font, boldFont);
-                AddInfoRow(document, "Total a Pagar:", $"€{ticket.Importe:F2}", font, boldFont);
+                AddInfoRow(document, "Precio por Hora:", $"€{reserva.Plaza?.PrecioHora:F2}", font, boldFont);
+                AddInfoRow(document, "Total a Pagar:", $"€{reserva.Importe:F2}", font, boldFont);
 
                 // Observaciones
-                if (!string.IsNullOrEmpty(ticket.Observaciones))
+                if (!string.IsNullOrEmpty(reserva.Observaciones))
                 {
                     document.Add(new Paragraph("").SetMarginBottom(20));
-                    AddInfoRow(document, "Observaciones:", ticket.Observaciones, font, boldFont);
+                    AddInfoRow(document, "Observaciones:", reserva.Observaciones, font, boldFont);
                 }
 
                 // Pie de página
@@ -90,11 +87,11 @@ namespace ParkingApi.Business.Services
             }
         }
 
-        public bool SaveTicketPdf(Ticket ticket, string filePath)
+        public bool SaveTicketPdf(Reserva reserva, string filePath)
         {
             try
             {
-                byte[] pdfBytes = GenerateTicketPdf(ticket);
+                byte[] pdfBytes = GenerateTicketPdf(reserva);
                 File.WriteAllBytes(filePath, pdfBytes);
                 return true;
             }

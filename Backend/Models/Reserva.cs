@@ -18,6 +18,12 @@ namespace ParkingApi.Models
 
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
+        
+        public decimal Importe { get; set; }
+        public string? Observaciones { get; set; }
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
+        public string NumeroTicket { get; set; } = string.Empty;
+
         // Relaciones
         public int UsuarioId { get; set; }
         public Usuario? Usuario { get; set; }
@@ -27,9 +33,6 @@ namespace ParkingApi.Models
 
         public int PlazaId { get; set; }
         public Plaza? Plaza { get; set; }
-
-        // Relación 1:1 con Ticket
-        public Ticket? Ticket { get; set; }
     }
 }
 

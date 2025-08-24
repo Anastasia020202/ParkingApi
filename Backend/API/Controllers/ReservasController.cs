@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
+using ParkingApi.Models.DTOs;
 using ParkingApi.Business.Services;
 using System.Security.Claims;
 
@@ -98,7 +99,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpPost(Name = "HacerReserva")]
-        public IActionResult HacerReserva(Reserva reserva)
+        public IActionResult HacerReserva([FromBody] ReservaCreateDto reservaDto)
         {
             try
             {
@@ -108,9 +109,15 @@ namespace ParkingApi.API.Controllers
                 }
 
                 // Cogiendo id del JWT
-                var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (usuarioIdClaim == null)
+                {
+                    return Unauthorized("Token inválido");
+                }
+                
+                var usuarioId = int.Parse(usuarioIdClaim.Value);
 
-                var reservaCreada = _reservaService.CreateReserva(usuarioId, reserva);
+                var reservaCreada = _reservaService.CreateReserva(usuarioId, reservaDto);
 
                 // Al solo devolver al id, no se serializa
                 return Ok(reservaCreada.Id);

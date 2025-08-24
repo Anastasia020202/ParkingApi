@@ -1,129 +1,141 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using ParkingApi.Models;
+using Microsoft.AspNetCore.Mvc;
 using ParkingApi.Business.Services;
+using ParkingApi.Models;
+using ParkingApi.Models.DTOs;
 
-namespace ParkingApi.API.Controllers;
-
-[ApiController]
-[Route("[controller]")]
-public class PlazasController : ControllerBase
+namespace ParkingApi.API.Controllers
 {
-    private readonly IPlazaService _plazaService;
-
-    public PlazasController(IPlazaService plazaService)
+    [ApiController]
+    [Route("[controller]")]
+    public class PlazasController : ControllerBase
     {
-        _plazaService = plazaService;
-    }
+        private readonly IPlazaService _plazaService;
 
-    [HttpGet(Name = "GetAllPlazas")]
-    public ActionResult<IEnumerable<Plaza>> GetPlazas([FromQuery] PlazaQueryParameters query)
-    {
-        if (!ModelState.IsValid)
+        public PlazasController(IPlazaService plazaService)
         {
-            return BadRequest(ModelState);
+            _plazaService = plazaService;
         }
 
-        try
-        {
-            var plazas = _plazaService.GetAllPlazas(query);
-            return Ok(plazas);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex);
-        }
-    }
-
-    [HttpGet("{id}", Name = "GetPlaza")]
-    public IActionResult GetPlaza(int id)
-    {
-        try
+        // GET
+        [HttpGet(Name = "GetAllPlazas")]
+        public ActionResult<IEnumerable<PlazaDto>> GetPlazas([FromQuery] PlazaQueryParameters query)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var plaza = _plazaService.GetPlazaById(id);
-            return Ok(plaza);
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound($"La plaza de id {id} no existe");
-        }
-    }
-
-    // POST
-    [Authorize]
-    [HttpPost]
-    public IActionResult CreatePlaza([FromBody] Plaza plaza)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
+            try
+            {
+                var plazas = _plazaService.GetAllPlazas(query);
+                return Ok(plazas);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
-        if (!_plazaService.EsAdmin(HttpContext.User))
+        [HttpGet("{id}", Name = "GetPlaza")]
+        public IActionResult GetPlaza(int id)
         {
-            return Forbid();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var plaza = _plazaService.GetPlazaById(id);
+                return Ok(plaza);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"La plaza de id {id} no existe");
+            }
         }
 
-        try
+        // POST
+        [Authorize]
+        [HttpPost]
+        public IActionResult CreatePlaza([FromBody] PlazaCreateDto plazaDto)
         {
-            var plazaCreada = _plazaService.CreatePlaza(plaza);
-            return Ok(plazaCreada.Id);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-    // PUT
-    [Authorize]
-    [HttpPut("{id}")]
-    public IActionResult UpdatePlaza(int id, [FromBody] Plaza plaza)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+            if (!_plazaService.EsAdmin(HttpContext.User))
+            {
+                return Forbid();
+            }
 
-        if (!_plazaService.EsAdmin(HttpContext.User))
-        {
-            return Forbid();
-        }
-
-        try
-        {
-            _plazaService.UpdatePlaza(id, plaza);
-            return Ok(id);
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-    }
-
-    // DELETE
-    [Authorize]
-    [HttpDelete("{id}")]
-    public IActionResult DeletePlaza(int id)
-    {
-        if (!_plazaService.EsAdmin(HttpContext.User))
-        {
-            return Forbid();
+            try
+            {
+                var plazaCreada = _plazaService.CreatePlaza(plazaDto);
+                return Ok(plazaCreada.Id);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        try
+        // PUT
+        [Authorize]
+        [HttpPut("{id}")]
+        public IActionResult UpdatePlaza(int id, [FromBody] PlazaUpdateDto plazaDto)
         {
-            _plazaService.DeletePlaza(id);
-            return NoContent();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_plazaService.EsAdmin(HttpContext.User))
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                // Convertir PlazaUpdateDto a PlazaCreateDto (temporal)
+                var plazaCreateDto = new PlazaCreateDto
+                {
+                    Numero = plazaDto.Numero,
+                    Tipo = plazaDto.Tipo,
+                    PrecioHora = plazaDto.PrecioHora,
+                    Disponible = plazaDto.Disponible
+                };
+                
+                _plazaService.UpdatePlaza(id, plazaCreateDto);
+                return Ok($"Plaza {id} actualizada correctamente");
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
-        catch (KeyNotFoundException ex)
+
+        // DELETE
+        [Authorize]
+        [HttpDelete("{id}")]
+        public IActionResult DeletePlaza(int id)
         {
-            return NotFound(ex.Message);
+            if (!_plazaService.EsAdmin(HttpContext.User))
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                _plazaService.DeletePlaza(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
     }
 }

@@ -1,14 +1,12 @@
 using ParkingApi.Models;
 
-namespace ParkingApi.Data.Repositories
+namespace ParkingApi.Data.Repositories;
+
+public interface IUsuarioRepository
 {
-    public interface IUsuarioRepository
-    {
-        IEnumerable<Usuario> GetAll();
-        Usuario? GetById(int id);
-        Usuario? GetByEmail(string email);
-        Usuario Add(Usuario usuario);
-        Usuario? Update(int id, Usuario usuario);
-        bool Delete(int id);
-    }
+    public Usuario AddUsuarioFromCredentials(string correo, string hash, byte[] salt);
+    public Usuario GetUsuarioByEmail(string correo);
+    public Usuario GetUsuarioById(int id);
+    public IEnumerable<Usuario> GetUsuarios(UsuarioQueryParameters query);
+    public void SaveChanges();
 }

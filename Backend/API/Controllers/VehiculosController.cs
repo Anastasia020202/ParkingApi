@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParkingApi.Models;
+using ParkingApi.Models.DTOs;
 using ParkingApi.Business.Services;
 using System.Security.Claims;
 
@@ -19,7 +20,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpGet(Name = "GetAllVehiculos")]
-        public ActionResult<IEnumerable<Vehiculo>> GetAllVehiculos()
+        public async Task<ActionResult<IEnumerable<Vehiculo>>> GetAllVehiculos()
         {
             try
             {
@@ -33,7 +34,7 @@ namespace ParkingApi.API.Controllers
                     return Unauthorized();
                 }
 
-                var vehiculos = _vehiculoService.GetAllVehiculos();
+                var vehiculos = await _vehiculoService.GetAllVehiculos();
                 return Ok(vehiculos);
             }
             catch (Exception ex)
@@ -44,7 +45,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpGet("{id}", Name = "GetVehiculo")]
-        public IActionResult GetVehiculo(int id)
+        public async Task<IActionResult> GetVehiculo(int id)
         {
             try
             {
@@ -53,12 +54,12 @@ namespace ParkingApi.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                if (!_vehiculoService.TieneAcceso(id, HttpContext.User))
+                if (!await _vehiculoService.TieneAcceso(id, HttpContext.User))
                 {
                     return Unauthorized();
                 }
 
-                var vehiculo = _vehiculoService.GetVehiculoById(id);
+                var vehiculo = await _vehiculoService.GetVehiculoById(id);
                 return Ok(vehiculo);
             }
             catch (KeyNotFoundException)
@@ -69,7 +70,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpGet("usuario/{usuarioId}", Name = "GetUsuarioVehiculos")]
-        public IActionResult GetUsuarioVehiculos(int usuarioId)
+        public async Task<IActionResult> GetUsuarioVehiculos(int usuarioId)
         {
             try
             {
@@ -78,12 +79,12 @@ namespace ParkingApi.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                if (!_vehiculoService.TieneAcceso(usuarioId, HttpContext.User))
+                if (!await _vehiculoService.TieneAcceso(usuarioId, HttpContext.User))
                 {
                     return Unauthorized();
                 }
 
-                var vehiculos = _vehiculoService.GetVehiculosByUsuarioId(usuarioId);
+                var vehiculos = await _vehiculoService.GetVehiculosByUsuarioId(usuarioId);
                 return Ok(vehiculos);
             }
             catch (KeyNotFoundException ex)
@@ -98,7 +99,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult CreateVehiculo([FromBody] Vehiculo vehiculo)
+        public async Task<IActionResult> CreateVehiculo([FromBody] VehiculoCreateDto vehiculoDto)
         {
             try
             {
@@ -108,9 +109,15 @@ namespace ParkingApi.API.Controllers
                 }
 
                 // Cogiendo id del JWT
-                var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (usuarioIdClaim == null)
+                {
+                    return Unauthorized("Token inválido");
+                }
+                
+                var usuarioId = int.Parse(usuarioIdClaim.Value);
 
-                var vehiculoCreado = _vehiculoService.CreateVehiculo(usuarioId, vehiculo);
+                var vehiculoCreado = await _vehiculoService.CreateVehiculo(vehiculoDto, usuarioId);
 
                 return Ok(vehiculoCreado.Id);
             }

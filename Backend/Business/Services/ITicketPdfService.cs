@@ -7,17 +7,17 @@ namespace ParkingApi.Business.Services
         /// <summary>
         /// Genera un PDF del ticket de parking
         /// </summary>
-        /// <param name="ticket">Ticket a generar</param>
+        /// <param name="reserva">Reserva a generar ticket</param>
         /// <returns>Array de bytes del PDF generado</returns>
-        byte[] GenerateTicketPdf(Ticket ticket);
+        byte[] GenerateTicketPdf(Reserva reserva);
         
         /// <summary>
         /// Genera un PDF del ticket y lo guarda en disco
         /// </summary>
-        /// <param name="ticket">Ticket a generar</param>
+        /// <param name="reserva">Reserva a generar ticket</param>
         /// <param name="filePath">Ruta donde guardar el PDF</param>
         /// <returns>True si se guardó correctamente</returns>
-        bool SaveTicketPdf(Ticket ticket, string filePath);
+        bool SaveTicketPdf(Reserva reserva, string filePath);
     }
 }
 

@@ -1,17 +1,24 @@
 using System.Security.Claims;
 using ParkingApi.Models;
+using ParkingApi.Models.DTOs;
 
-namespace ParkingApi.Business.Services
+namespace ParkingApi.Business.Services;
+
+public interface IPlazaService
 {
-    public interface IPlazaService
-    {
-        IEnumerable<Plaza> GetAllPlazas(PlazaQueryParameters? queryParameters = null);
-        Plaza? GetPlazaById(int id);
-        Plaza CreatePlaza(Plaza plaza);
-        Plaza? UpdatePlaza(int id, Plaza plaza);
-        bool DeletePlaza(int id);
-        
-        // Autorizar
-        bool EsAdmin(ClaimsPrincipal user);
-    }
+    // Create
+    public Plaza CreatePlaza(PlazaCreateDto plaza);
+
+    // Read
+    public IEnumerable<Plaza> GetAllPlazas(PlazaQueryParameters query);
+    public Plaza GetPlazaById(int id);
+
+    // Update
+    public void UpdatePlaza(int id, PlazaCreateDto plaza);
+
+    // Delete
+    public void DeletePlaza(int id);
+
+    // Autorizar
+    public bool EsAdmin(ClaimsPrincipal user);
 }

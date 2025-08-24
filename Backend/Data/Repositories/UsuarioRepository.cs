@@ -1,70 +1,92 @@
 using ParkingApi.Models;
-using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Data.Repositories
+namespace ParkingApi.Data.Repositories;
+
+public class UsuarioRepository : IUsuarioRepository
 {
-    public class UsuarioRepository : IUsuarioRepository
+
+    private readonly ParkingDbContext _context;
+
+    public UsuarioRepository(ParkingDbContext context)
     {
-        private static List<Usuario> _usuarios = new List<Usuario>();
+        _context = context;
+    }
 
-        // Constructor estático para crear Admin por defecto
-        static UsuarioRepository()
+    public Usuario AddUsuarioFromCredentials(string correo, string hash, byte[] salt)
+    {
+        // Primero chequear que el correo no se esté usando ya (devolver excepción)
+        if (_context.Usuarios.Any(u => u.Correo == correo))
         {
-            // Crear Admin por defecto
-            _usuarios.Add(new Usuario
-            {
-                Id = 1,
-                Correo = "admin@parking.com",
-                HashContrasena = "admin123",
-                SaltContrasena = new byte[0],
-                Rol = "Admin",
-                FechaCreacion = DateTime.UtcNow
-            });
+            throw new InvalidOperationException("Ya existe un usuario con ese correo.");
+        }
+        // Luego coger de la base de datos
+        var user = new Usuario
+        {
+            Correo = correo,
+            HashContrasena = hash,
+            SaltContrasena = salt,
+            Rol = "User",
+            FechaCreacion = DateTime.Now
+        };
+
+        _context.Add(user);
+        _context.SaveChanges();
+
+        return user;
+    }
+
+    public Usuario GetUsuarioByEmail(string correo)
+    {
+        var user = _context.Usuarios.FirstOrDefault(u => u.Correo == correo);
+        if (user is null)
+        {
+            throw new KeyNotFoundException("Usuario no encontrado");
+        }
+        return user;
+    }
+
+    public Usuario GetUsuarioById(int id)
+    {
+        var user = _context.Usuarios.FirstOrDefault(u => u.Id == id);
+        if (user is null)
+        {
+            throw new KeyNotFoundException("Usuario no encontrado");
+        }
+        return user;
+    }
+
+    public IEnumerable<Usuario> GetUsuarios(UsuarioQueryParameters queryParams)
+    {
+        var query = _context.Usuarios.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(queryParams.Rol))
+        {
+            query = query.Where(u => u.Rol.ToLower().Contains(queryParams.Rol.ToLower()));
         }
 
-        public IEnumerable<Usuario> GetAll()
+        if (!string.IsNullOrWhiteSpace(queryParams.Correo))
         {
-            return _usuarios;
+            query = query.Where(u => u.Correo.ToLower().Contains(queryParams.Correo.ToLower()));
         }
 
-        public Usuario? GetById(int id)
+        if (queryParams.FechaInicio != null)
         {
-            return _usuarios.FirstOrDefault(u => u.Id == id);
+            query = query.Where(u => u.FechaCreacion >= queryParams.FechaInicio);
+            query = query.OrderBy(u => u.FechaCreacion);
         }
 
-        public Usuario? GetByEmail(string email)
+        if (queryParams.FechaFinal != null)
         {
-            return _usuarios.FirstOrDefault(u => u.Correo == email);
+            query = query.Where(u => u.FechaCreacion <= queryParams.FechaFinal);
+            query = query.OrderBy(u => u.FechaCreacion);
         }
 
-        public Usuario Add(Usuario usuario)
-        {
-            usuario.Id = _usuarios.Count > 0 ? _usuarios.Max(u => u.Id) + 1 : 1;
-            _usuarios.Add(usuario);
-            return usuario;
-        }
+        var result = query.ToList();
+        return result;
+    }
 
-        public Usuario? Update(int id, Usuario usuario)
-        {
-            var existingUsuario = _usuarios.FirstOrDefault(u => u.Id == id);
-            if (existingUsuario == null)
-                return null;
-
-            existingUsuario.Correo = usuario.Correo;
-            existingUsuario.HashContrasena = usuario.HashContrasena;
-            existingUsuario.SaltContrasena = usuario.SaltContrasena;
-            existingUsuario.Rol = usuario.Rol;
-
-            return existingUsuario;
-        }
-
-        public bool Delete(int id)
-        {
-            var usuario = _usuarios.FirstOrDefault(u => u.Id == id);
-            if (usuario == null)
-                return false;
-
-            return _usuarios.Remove(usuario);
-        }
+    public void SaveChanges()
+    {
+        _context.SaveChanges();
     }
 }

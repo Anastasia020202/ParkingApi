@@ -1,13 +1,15 @@
 using ParkingApi.Models;
 
-namespace ParkingApi.Data.Repositories
+namespace ParkingApi.Data.Repositories;
+
+public interface IPlazaRepository
 {
-    public interface IPlazaRepository
-    {
-        IEnumerable<Plaza> GetAll();
-        Plaza? GetById(int id);
-        Plaza Add(Plaza plaza);
-        Plaza? Update(int id, Plaza plaza);
-        bool Delete(int id);
-    }
+
+    public IEnumerable<Plaza> GetAllPlazas(PlazaQueryParameters query);
+    public Plaza GetPlaza(int id);
+    public void AddPlaza(Plaza plaza);
+    public void UpdatePlaza(Plaza plaza);
+    public void DeletePlaza(int id);
+
+    public void SaveChanges();
 }

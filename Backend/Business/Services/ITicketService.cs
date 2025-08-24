@@ -1,15 +1,11 @@
 using ParkingApi.Models;
+using System.Security.Claims;
 
-namespace ParkingApi.Business.Services
+namespace ParkingApi.Business.Services;
+
+public interface ITicketService
 {
-    public interface ITicketService
-    {
-        IEnumerable<Ticket> GetAllTickets();
-        Ticket? GetTicketById(int id);
-        Ticket? GetTicketByReservaId(int reservaId);
-        IEnumerable<Ticket> GetTicketsByUsuarioId(int usuarioId);
-        Ticket CreateTicket(Ticket ticket);
-        Ticket? UpdateTicket(int id, Ticket ticket);
-        bool DeleteTicket(int id);
-    }
+    public byte[] GenerateTicketPdf(int reservaId);
+    public bool EsAdmin(ClaimsPrincipal user);
+    public bool TieneAcceso(int reservaId, ClaimsPrincipal user);
 }

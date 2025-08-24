@@ -1,56 +1,66 @@
 using ParkingApi.Models;
-using ParkingApi.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
 
-namespace ParkingApi.Data.Repositories
+namespace ParkingApi.Data.Repositories;
+
+public class ReservaRepository : IReservaRepository
 {
-    public class ReservaRepository : IReservaRepository
+    private readonly ParkingDbContext _context;
+
+    public ReservaRepository(ParkingDbContext context)
     {
-        private static List<Reserva> _reservas = new List<Reserva>();
+        _context = context;
+    }
 
-        public IEnumerable<Reserva> GetAll()
+    public void AddReserva(Reserva reserva)
+    {
+        _context.Reservas.Add(reserva);
+    }
+
+    public IEnumerable<Reserva> GetAllReservas()
+    {
+        var result = _context.Reservas.Include(p => p.Usuario)
+                                     .Include(p => p.Plaza)
+                                     .Include(p => p.Vehiculo)
+                                     .ToList();
+
+        return result;
+    }
+
+    public Reserva GetReservaById(int id)
+    {
+        var reservas = _context.Reservas.Include(p => p.Usuario)
+            .Include(p => p.Plaza)
+            .Include(p => p.Vehiculo);
+
+        var reserva = reservas.FirstOrDefault(pedido => pedido.Id == id);
+
+        if (reserva is null)
         {
-            return _reservas;
+            throw new KeyNotFoundException("Reserva no encontrada");
         }
 
-        public Reserva? GetById(int id)
+        return reserva;
+    }
+
+    public IEnumerable<Reserva> GetReservasByUserId(int userId)
+    {
+        var reservas = _context.Reservas.Include(p => p.Usuario)
+                                      .Include(p => p.Plaza)
+                                      .Include(p => p.Vehiculo)
+                                      .Where(pedido => pedido.UsuarioId == userId);
+
+        if (reservas is null || !reservas.Any())
         {
-            return _reservas.FirstOrDefault(r => r.Id == id);
+            throw new KeyNotFoundException("Ninguna reserva asociada con esa id de usuario.");
         }
 
-        public IEnumerable<Reserva> GetByUsuarioId(int usuarioId)
-        {
-            return _reservas.Where(r => r.UsuarioId == usuarioId);
-        }
+        var result = reservas.ToList();
+        return result;
+    }
 
-        public Reserva Add(Reserva reserva)
-        {
-            reserva.Id = _reservas.Count > 0 ? _reservas.Max(r => r.Id) + 1 : 1;
-            _reservas.Add(reserva);
-            return reserva;
-        }
-
-        public Reserva? Update(int id, Reserva reserva)
-        {
-            var existingReserva = _reservas.FirstOrDefault(r => r.Id == id);
-            if (existingReserva == null)
-                return null;
-
-            existingReserva.UsuarioId = reserva.UsuarioId;
-            existingReserva.PlazaId = reserva.PlazaId;
-            existingReserva.FechaInicio = reserva.FechaInicio;
-            existingReserva.FechaFin = reserva.FechaFin;
-            existingReserva.TotalAPagar = reserva.TotalAPagar;
-
-            return existingReserva;
-        }
-
-        public bool Delete(int id)
-        {
-            var reserva = _reservas.FirstOrDefault(r => r.Id == id);
-            if (reserva == null)
-                return false;
-
-            return _reservas.Remove(reserva);
-        }
+    public void SaveChanges()
+    {
+        _context.SaveChanges();
     }
 }

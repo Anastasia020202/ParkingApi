@@ -1,50 +1,104 @@
 using ParkingApi.Models;
-using ParkingApi.Data.Repositories;
 
-namespace ParkingApi.Data.Repositories
+namespace ParkingApi.Data.Repositories;
+
+public class PlazaRepository : IPlazaRepository
 {
-    public class PlazaRepository : IPlazaRepository
+
+    private readonly ParkingDbContext _context;
+
+    public PlazaRepository(ParkingDbContext context)
     {
-        private static List<Plaza> _plazas = new List<Plaza>();
+        _context = context;
+    }
 
-        public IEnumerable<Plaza> GetAll()
+    public IEnumerable<Plaza> GetAllPlazas(PlazaQueryParameters queryParams)
+    {
+        var query = _context.Plazas.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(queryParams.Tipo))
         {
-            return _plazas;
+            query = query.Where(p => p.Tipo.ToLower().Contains(queryParams.Tipo.ToLower()));
         }
 
-        public Plaza? GetById(int id)
+        if (queryParams.SoloDisponibles)
         {
-            return _plazas.FirstOrDefault(p => p.Id == id);
+            query = query.Where(p => p.Disponible);
         }
 
-        public Plaza Add(Plaza plaza)
+        if (queryParams.PrecioMin.HasValue)
         {
-            plaza.Id = _plazas.Count > 0 ? _plazas.Max(p => p.Id) + 1 : 1;
-            _plazas.Add(plaza);
-            return plaza;
+            query = query.Where(p => p.PrecioHora >= queryParams.PrecioMin.Value);
         }
 
-        public Plaza? Update(int id, Plaza plaza)
+        if (queryParams.PrecioMax.HasValue)
         {
-            var existingPlaza = _plazas.FirstOrDefault(p => p.Id == id);
-            if (existingPlaza == null)
-                return null;
-
-            existingPlaza.Numero = plaza.Numero;
-            existingPlaza.Tipo = plaza.Tipo;
-            existingPlaza.PrecioHora = plaza.PrecioHora;
-            existingPlaza.Disponible = plaza.Disponible;
-
-            return existingPlaza;
+            query = query.Where(p => p.PrecioHora <= queryParams.PrecioMax.Value);
         }
 
-        public bool Delete(int id)
+        if (!string.IsNullOrWhiteSpace(queryParams.OrderBy))
         {
-            var plaza = _plazas.FirstOrDefault(p => p.Id == id);
-            if (plaza == null)
-                return false;
-
-            return _plazas.Remove(plaza);
+            switch (queryParams.OrderBy.ToLower())
+            {
+                case "precio":
+                    query = queryParams.Desc
+                        ? query.OrderByDescending(p => p.PrecioHora)
+                        : query.OrderBy(p => p.PrecioHora);
+                    break;
+                case "numero":
+                    query = queryParams.Desc
+                        ? query.OrderByDescending(p => p.Numero)
+                        : query.OrderBy(p => p.Numero);
+                    break;
+                case "id":
+                    query = queryParams.Desc
+                        ? query.OrderByDescending(p => p.Id)
+                        : query.OrderBy(p => p.Id);
+                    break;
+                default:
+                    break;
+            }
         }
+
+        var result = query.ToList();
+
+        return result;
+    }
+
+    public Plaza GetPlaza(int id)
+    {
+        var plaza = _context.Plazas.FirstOrDefault(plaza => plaza.Id == id);
+        if (plaza is null)
+        {
+            throw new KeyNotFoundException("Plaza no encontrada");
+        }
+        return plaza;
+    }
+
+    public void AddPlaza(Plaza plaza)
+    {
+        _context.Plazas.Add(plaza);
+    }
+
+    public void UpdatePlaza(Plaza plaza)
+    {
+        _context.Plazas.Remove(plaza);
+        SaveChanges();
+    }
+
+    public void DeletePlaza(int id)
+    {
+        var plaza = GetPlaza(id);
+        if (plaza is null)
+        {
+            throw new KeyNotFoundException("Plaza no encontrada");
+        }
+        _context.Plazas.Remove(plaza);
+        SaveChanges();
+    }
+
+    public void SaveChanges()
+    {
+        _context.SaveChanges();
     }
 }

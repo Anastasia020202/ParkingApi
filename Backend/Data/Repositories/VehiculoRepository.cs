@@ -1,56 +1,74 @@
+using ParkingApi.Data;
 using ParkingApi.Models;
-using ParkingApi.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ParkingApi.Data.Repositories
 {
     public class VehiculoRepository : IVehiculoRepository
     {
-        private static List<Vehiculo> _vehiculos = new List<Vehiculo>();
+        private readonly ParkingDbContext _context;
 
-        public IEnumerable<Vehiculo> GetAll()
+        public VehiculoRepository(ParkingDbContext context)
         {
-            return _vehiculos;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public Vehiculo? GetById(int id)
+        public async Task<Vehiculo?> GetById(int id)
         {
-            return _vehiculos.FirstOrDefault(v => v.Id == id);
+            return await _context.Vehiculos
+                .Include(v => v.Usuario)
+                .FirstOrDefaultAsync(v => v.Id == id);
         }
 
-        public IEnumerable<Vehiculo> GetByUsuarioId(int usuarioId)
+        public async Task<IEnumerable<Vehiculo>> GetAll()
         {
-            return _vehiculos.Where(v => v.UsuarioId == usuarioId);
+            return await _context.Vehiculos
+                .Include(v => v.Usuario)
+                .Where(v => v.Activo)
+                .ToListAsync();
         }
 
-        public Vehiculo Add(Vehiculo vehiculo)
+        public async Task<Vehiculo> Add(Vehiculo vehiculo)
         {
-            vehiculo.Id = _vehiculos.Count > 0 ? _vehiculos.Max(v => v.Id) + 1 : 1;
-            _vehiculos.Add(vehiculo);
+            _context.Vehiculos.Add(vehiculo);
+            await _context.SaveChangesAsync();
             return vehiculo;
         }
 
-        public Vehiculo? Update(int id, Vehiculo vehiculo)
+        public async Task<Vehiculo?> Update(int id, Vehiculo vehiculo)
         {
-            var existingVehiculo = _vehiculos.FirstOrDefault(v => v.Id == id);
-            if (existingVehiculo == null)
-                return null;
+            var existing = await _context.Vehiculos.FindAsync(id);
+            if (existing == null) return null;
 
-            existingVehiculo.UsuarioId = vehiculo.UsuarioId;
-            existingVehiculo.Matricula = vehiculo.Matricula;
-            existingVehiculo.Marca = vehiculo.Marca;
-            existingVehiculo.Modelo = vehiculo.Modelo;
-            existingVehiculo.Color = vehiculo.Color;
+            existing.Matricula = vehiculo.Matricula;
+            existing.Marca = vehiculo.Marca;
+            existing.Modelo = vehiculo.Modelo;
+            existing.Color = vehiculo.Color;
+            existing.Activo = vehiculo.Activo;
 
-            return existingVehiculo;
+            await _context.SaveChangesAsync();
+            return existing;
         }
 
-        public bool Delete(int id)
+        public async Task<bool> Delete(int id)
         {
-            var vehiculo = _vehiculos.FirstOrDefault(v => v.Id == id);
+            var vehiculo = await _context.Vehiculos.FindAsync(id);
             if (vehiculo == null)
                 return false;
 
-            return _vehiculos.Remove(vehiculo);
+            vehiculo.Activo = false; // Soft delete
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<IEnumerable<Vehiculo>> GetByUsuario(int usuarioId)
+        {
+            return await _context.Vehiculos
+                .Include(v => v.Usuario)
+                .Where(v => v.UsuarioId == usuarioId && v.Activo)
+                .ToListAsync();
         }
     }
 }
