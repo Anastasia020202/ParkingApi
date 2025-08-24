@@ -20,7 +20,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpGet(Name = "GetAllVehiculos")]
-        public async Task<ActionResult<IEnumerable<Vehiculo>>> GetAllVehiculos()
+        public ActionResult<IEnumerable<Vehiculo>> GetAllVehiculos()
         {
             try
             {
@@ -34,7 +34,7 @@ namespace ParkingApi.API.Controllers
                     return Unauthorized();
                 }
 
-                var vehiculos = await _vehiculoService.GetAllVehiculos();
+                var vehiculos = _vehiculoService.GetAllVehiculos();
                 return Ok(vehiculos);
             }
             catch (Exception ex)
@@ -45,7 +45,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpGet("{id}", Name = "GetVehiculo")]
-        public async Task<IActionResult> GetVehiculo(int id)
+        public IActionResult GetVehiculo(int id)
         {
             try
             {
@@ -54,12 +54,12 @@ namespace ParkingApi.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                if (!await _vehiculoService.TieneAcceso(id, HttpContext.User))
+                if (!_vehiculoService.TieneAcceso(id, HttpContext.User))
                 {
                     return Unauthorized();
                 }
 
-                var vehiculo = await _vehiculoService.GetVehiculoById(id);
+                var vehiculo = _vehiculoService.GetVehiculoById(id);
                 return Ok(vehiculo);
             }
             catch (KeyNotFoundException)
@@ -70,7 +70,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpGet("usuario/{usuarioId}", Name = "GetUsuarioVehiculos")]
-        public async Task<IActionResult> GetUsuarioVehiculos(int usuarioId)
+        public IActionResult GetUsuarioVehiculos(int usuarioId)
         {
             try
             {
@@ -79,12 +79,12 @@ namespace ParkingApi.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                if (!await _vehiculoService.TieneAcceso(usuarioId, HttpContext.User))
+                if (!_vehiculoService.TieneAcceso(usuarioId, HttpContext.User))
                 {
                     return Unauthorized();
                 }
 
-                var vehiculos = await _vehiculoService.GetVehiculosByUsuarioId(usuarioId);
+                var vehiculos = _vehiculoService.GetVehiculosByUsuarioId(usuarioId);
                 return Ok(vehiculos);
             }
             catch (KeyNotFoundException ex)
@@ -99,7 +99,7 @@ namespace ParkingApi.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateVehiculo([FromBody] VehiculoCreateDto vehiculoDto)
+        public IActionResult CreateVehiculo([FromBody] VehiculoCreateDto vehiculoDto)
         {
             try
             {
@@ -117,7 +117,7 @@ namespace ParkingApi.API.Controllers
                 
                 var usuarioId = int.Parse(usuarioIdClaim.Value);
 
-                var vehiculoCreado = await _vehiculoService.CreateVehiculo(vehiculoDto, usuarioId);
+                var vehiculoCreado = _vehiculoService.CreateVehiculo(vehiculoDto, usuarioId);
 
                 return Ok(vehiculoCreado.Id);
             }

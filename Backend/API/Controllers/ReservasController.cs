@@ -69,8 +69,8 @@ namespace ParkingApi.API.Controllers
         }
 
         [Authorize]
-        [HttpGet("usuario/{usuarioId}", Name = "GetUsuarioReservas")]
-        public IActionResult GetUsuarioReservas(int usuarioId)
+        [HttpGet("usuario/{usuarioId}", Name = "GetReservasByUsuario")]
+        public IActionResult GetReservasByUsuario(int usuarioId)
         {
             try
             {
