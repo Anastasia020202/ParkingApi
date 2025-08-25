@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: parkingapi_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123Secreto456_"
+      MYSQL_DATABASE: "ParkingApi"
+      MYSQL_USER: "parkinguser"
+      MYSQL_PASSWORD: "parkingpass123"
+    ports:
+      - "8317:3306"
+    networks:
+      - parkingnet
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parkingapi_api
+    ports:
+      - "7138:7138"
+    depends_on:
+      - mysql
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:7138
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=ParkingApi;User=parkinguser;Password=parkingpass123;
+    networks:
+      - parkingnet
+
+volumes:
+  mysql_data:
+
+networks:
+  parkingnet:
+    driver: bridge

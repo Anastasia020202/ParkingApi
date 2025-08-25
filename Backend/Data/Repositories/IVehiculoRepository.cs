@@ -1,16 +1,15 @@
 using ParkingApi.Models;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ParkingApi.Data.Repositories
 {
     public interface IVehiculoRepository
     {
-        Task<Vehiculo?> GetById(int id);
-        Task<IEnumerable<Vehiculo>> GetAll();
-        Task<Vehiculo> Add(Vehiculo vehiculo);
-        Task<Vehiculo?> Update(int id, Vehiculo vehiculo);
-        Task<bool> Delete(int id);
-        Task<IEnumerable<Vehiculo>> GetByUsuario(int usuarioId);
+        Vehiculo? GetById(int id);
+        IEnumerable<Vehiculo> GetAll();
+        Vehiculo Add(Vehiculo vehiculo);
+        Vehiculo? Update(int id, Vehiculo vehiculo);
+        bool Delete(int id);
+        IEnumerable<Vehiculo> GetByUsuario(int usuarioId);
     }
 }

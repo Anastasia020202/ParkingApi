@@ -8,3 +8,7 @@ public class UsuarioQueryParameters
     public DateTime? FechaFinal { get; set; }
 }
 
+
+
+
+

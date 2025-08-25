@@ -2,7 +2,7 @@ using ParkingApi.Data;
 using ParkingApi.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace ParkingApi.Data.Repositories
 {
@@ -15,31 +15,31 @@ namespace ParkingApi.Data.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<Vehiculo?> GetById(int id)
+        public Vehiculo? GetById(int id)
         {
-            return await _context.Vehiculos
+            return _context.Vehiculos
                 .Include(v => v.Usuario)
-                .FirstOrDefaultAsync(v => v.Id == id);
+                .FirstOrDefault(v => v.Id == id);
         }
 
-        public async Task<IEnumerable<Vehiculo>> GetAll()
+        public IEnumerable<Vehiculo> GetAll()
         {
-            return await _context.Vehiculos
+            return _context.Vehiculos
                 .Include(v => v.Usuario)
                 .Where(v => v.Activo)
-                .ToListAsync();
+                .ToList();
         }
 
-        public async Task<Vehiculo> Add(Vehiculo vehiculo)
+        public Vehiculo Add(Vehiculo vehiculo)
         {
             _context.Vehiculos.Add(vehiculo);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
             return vehiculo;
         }
 
-        public async Task<Vehiculo?> Update(int id, Vehiculo vehiculo)
+        public Vehiculo? Update(int id, Vehiculo vehiculo)
         {
-            var existing = await _context.Vehiculos.FindAsync(id);
+            var existing = _context.Vehiculos.Find(id);
             if (existing == null) return null;
 
             existing.Matricula = vehiculo.Matricula;
@@ -48,27 +48,27 @@ namespace ParkingApi.Data.Repositories
             existing.Color = vehiculo.Color;
             existing.Activo = vehiculo.Activo;
 
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
             return existing;
         }
 
-        public async Task<bool> Delete(int id)
+        public bool Delete(int id)
         {
-            var vehiculo = await _context.Vehiculos.FindAsync(id);
+            var vehiculo = _context.Vehiculos.Find(id);
             if (vehiculo == null)
                 return false;
 
             vehiculo.Activo = false; // Soft delete
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
             return true;
         }
 
-        public async Task<IEnumerable<Vehiculo>> GetByUsuario(int usuarioId)
+        public IEnumerable<Vehiculo> GetByUsuario(int usuarioId)
         {
-            return await _context.Vehiculos
+            return _context.Vehiculos
                 .Include(v => v.Usuario)
                 .Where(v => v.UsuarioId == usuarioId && v.Activo)
-                .ToListAsync();
+                .ToList();
         }
     }
 }
